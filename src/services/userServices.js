@@ -1,11 +1,7 @@
 const { User } = require("../db.js");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
-const {
-  correo_ya_existe,
-  correo_no_existe,
-  ha_ocurrido_un_error,
-} = require("./errors.js");
+const { errorConstans } = require("../controler/constans.js");
 
 const emailExists = async (email) => {
   try {
@@ -16,7 +12,7 @@ const emailExists = async (email) => {
     return emailSearch ? emailSearch : false;
   } catch (error) {
     console.log(error);
-    return { error: `${ha_ocurrido_un_error} emailExists` };
+    return { error: `${errorConstans.ha_ocurrido_un_error} emailExists` };
   }
 };
 
@@ -27,7 +23,7 @@ const generateHash = async (password) => {
     return hashPassword;
   } catch (error) {
     console.log(error);
-    return { error: `${ha_ocurrido_un_error} generateHash` };
+    return { error: `${errorConstans.ha_ocurrido_un_error} generateHash` };
   }
 };
 
@@ -37,7 +33,7 @@ const validHash = async (password, passwordHash) => {
     return validHashPassword;
   } catch (error) {
     console.log(error);
-    return { error: `${ha_ocurrido_un_error} validHash` };
+    return { error: `${errorConstans.ha_ocurrido_un_error} validHash` };
   }
 };
 
@@ -59,7 +55,7 @@ const generateToken = async (email) => {
     return emailSearch;
   } catch (error) {
     console.log(error);
-    return { error: `${ha_ocurrido_un_error} generateToken` };
+    return { error: `${errorConstans.ha_ocurrido_un_error} generateToken` };
   }
 };
 
@@ -82,7 +78,7 @@ const SignUp = async (name, email, password) => {
     return createUser;
   } catch (error) {
     console.log(error);
-    return { error: `${ha_ocurrido_un_error} SignUp` };
+    return { error: `${errorConstans.ha_ocurrido_un_error} SignUp` };
   }
 };
 
@@ -107,7 +103,7 @@ const SignIn = async (email, password) => {
     return validHashPassword;
   } catch (error) {
     console.log(error);
-    return { error: `${ha_ocurrido_un_error} SignIn` };
+    return { error: `${errorConstans.ha_ocurrido_un_error} SignIn` };
   }
 };
 
