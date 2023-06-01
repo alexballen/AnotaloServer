@@ -6,6 +6,9 @@ const routes = require("./routes/index.js");
 
 const server = express();
 
+server.set("view engine", "ejs");
+server.set("views", __dirname + "/views");
+
 server.use(bodyParser.urlencoded({ extended: true, limit: "50mb" }));
 server.use(bodyParser.json({ limit: "50mb" }));
 
