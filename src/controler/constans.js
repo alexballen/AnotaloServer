@@ -1,7 +1,13 @@
-const errorConstans = {
-  correo_ya_existe: "correo_ya_existe",
-  correo_no_existe: "correo_no_existe",
-  ha_ocurrido_un_error: "ha_ocurrido_un_error",
+const authConstans = {
+  email_exists: "Correo ya existe",
+  email_does_not_exist: "Correo no existe",
+  valid_hash: "Validacion de hash incorrecta",
+  error_in_function: "Error en funcion -->",
+};
+
+const userConstans = {
+  error_in_function: "Error en funcion -->",
+  incomplete_data: "Datos incompletos",
 };
 
 const templateConstans = {
@@ -10,7 +16,8 @@ const templateConstans = {
 };
 
 module.exports = {
-  errorConstans,
+  authConstans,
+  userConstans,
   templateConstans,
 };
 
