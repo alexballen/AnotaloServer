@@ -5,6 +5,6 @@ const userR = require("./userR.js");
 const router = Router();
 
 router.use("/notes", notesR);
-router.use("/user", userR);
+router.use("/", userR);
 
 module.exports = router;
