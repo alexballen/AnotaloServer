@@ -1,7 +1,14 @@
 const { User } = require("../db.js");
+const axios = require("axios");
 const { userConstans, templateConstans } = require("./constans.js");
 const { emailSendProcess } = require("../services/emailServices.js");
-const { SignUp, SignIn } = require("../services/authServices.js");
+const {
+  SignUp,
+  SignIn,
+  signInGoogle,
+  googleAuthorizationCode,
+  getAccessToken,
+} = require("../services/authServices.js");
 
 const getAllUser = async (req, res) => {
   try {
@@ -77,9 +84,51 @@ const postSendMail = async (req, res) => {
   }
 };
 
+const getSingInGoogle = async (req, res) => {
+  try {
+    const authGoogle = await signInGoogle();
+    console.log(authGoogle);
+
+    res.redirect(authGoogle);
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+const getCodeAuthGoogle = async (req, res) => {
+  try {
+    const code = await googleAuthorizationCode(req);
+    console.log(code);
+
+    const tokenAccess = await getAccessToken(code);
+    console.log(tokenAccess);
+
+    /* const accessToken = tokenAccess.data.access_token;
+    const userInfoResponse = await axios.get(
+      "https://www.googleapis.com/oauth2/v2/userinfo",
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      }
+    );
+
+    // Aquí puedes utilizar los datos de usuario en userInfoResponse.data
+    const { id, email, name, picture } = userInfoResponse.data;
+
+    console.log(id, email, name, picture); */
+
+    res.status(200).json(code);
+  } catch (error) {
+    console.log(error);
+  }
+};
+
 module.exports = {
   getAllUser,
   postSignUp,
   postSignIn,
   postSendMail,
+  getSingInGoogle,
+  getCodeAuthGoogle,
 };
