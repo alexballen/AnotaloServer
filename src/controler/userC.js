@@ -1,5 +1,6 @@
 const { User } = require("../db.js");
 const axios = require("axios");
+const jwt = require("jsonwebtoken");
 const { userConstans, templateConstans } = require("./constans.js");
 const { emailSendProcess } = require("../services/emailServices.js");
 const {
@@ -8,6 +9,9 @@ const {
   signInGoogle,
   googleAuthorizationCode,
   getAccessToken,
+  getUserInformation,
+  authGoogle,
+  getErrorGoogle,
 } = require("../services/authServices.js");
 
 const getAllUser = async (req, res) => {
@@ -86,39 +90,39 @@ const postSendMail = async (req, res) => {
 
 const getSingInGoogle = async (req, res) => {
   try {
-    const authGoogle = await signInGoogle();
+    const CLIENT_ID = process.env.CLIENT_ID;
+    const REDIRECT_URI = process.env.REDIRECT_URI;
+    const SCOPE = process.env.SCOPE;
+
+    const authGoogle = await signInGoogle(CLIENT_ID, REDIRECT_URI, SCOPE);
     console.log(authGoogle);
 
     res.redirect(authGoogle);
   } catch (error) {
     console.log(error);
+    res.status(500);
   }
 };
 
 const getCodeAuthGoogle = async (req, res) => {
   try {
-    const code = await googleAuthorizationCode(req);
-    console.log(code);
+    const CLIENT_ID = process.env.CLIENT_ID;
+    const CLIENT_SECRET = process.env.CLIENT_SECRET;
+    const REDIRECT_URI = process.env.REDIRECT_URI;
 
-    const tokenAccess = await getAccessToken(code);
-    console.log(tokenAccess);
+    const obj = await authGoogle(req, CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
+    console.log(obj);
 
-    /* const accessToken = tokenAccess.data.access_token;
-    const userInfoResponse = await axios.get(
-      "https://www.googleapis.com/oauth2/v2/userinfo",
-      {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      }
-    );
+    res.status(200).json("exito");
+  } catch (error) {
+    console.log(error);
+  }
+};
 
-    // Aquí puedes utilizar los datos de usuario en userInfoResponse.data
-    const { id, email, name, picture } = userInfoResponse.data;
-
-    console.log(id, email, name, picture); */
-
-    res.status(200).json(code);
+const getErrorAuthGoogle = (req, res) => {
+  try {
+    const authError = getErrorGoogle(req);
+    console.log(authError);
   } catch (error) {
     console.log(error);
   }
@@ -131,4 +135,5 @@ module.exports = {
   postSendMail,
   getSingInGoogle,
   getCodeAuthGoogle,
+  getErrorAuthGoogle,
 };
