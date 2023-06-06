@@ -118,36 +118,45 @@ const SignIn = async (UserDb, email, password, res) => {
   }
 };
 
-const signInGoogle = async () => {
+const signInGoogle = async (CLIENT_ID, REDIRECT_URI, SCOPE) => {
   try {
-    const CLIENT_ID =
-      "851275819483-94ma132th8ejk8fdstkhtur9e0ap3stg.apps.googleusercontent.com";
-    const CLIENT_SECRET = "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";
-    const REDIRECT_URI = "http://localhost:3001/auth/google/callback";
+    if (CLIENT_ID && REDIRECT_URI && SCOPE) {
+      const authorizationUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${CLIENT_ID}&redirect_uri=${REDIRECT_URI}&response_type=code&scope=${encodeURIComponent(
+        SCOPE
+      )}`;
+      console.log(authorizationUrl);
 
-    const authorizationUrl = `https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id=${CLIENT_ID}&redirect_uri=${REDIRECT_URI}&scope=profile email`;
+      return authorizationUrl;
+    }
 
-    return authorizationUrl;
+    return { message: "Debes ingresar las variables de entorno" };
   } catch (error) {
     console.log(error);
+    return { error: `${authConstans.error_in_function} SignIn` };
   }
 };
 
 const googleAuthorizationCode = (req) => {
   try {
     const { code } = req.query;
-    return code || null;
+    return code;
   } catch (error) {
     console.log(error);
   }
 };
 
-const getAccessToken = async (code) => {
+const getErrorGoogle = (req) => {
   try {
-    const CLIENT_ID =
-      "851275819483-94ma132th8ejk8fdstkhtur9e0ap3stg.apps.googleusercontent.com";
-    const CLIENT_SECRET = "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";
-    const REDIRECT_URI = "http://localhost:3001/auth/google/callback";
+    const { authError } = req.query;
+    console.log(authError);
+    return authError;
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+const getAccessToken = async (code, CLIENT_ID, CLIENT_SECRET, REDIRECT_URI) => {
+  try {
     const tokenResponse = await axios.post(
       "https://oauth2.googleapis.com/token",
       {
@@ -165,26 +174,50 @@ const getAccessToken = async (code) => {
   }
 };
 
-const otrocodigo = async () => {
-  const accessToken = tokenResponse.data.access_token;
-  console.log(accessToken);
+const getUserInformation = async (accessToken) => {
+  try {
+    const userInfoResponse = await axios.get(
+      "https://www.googleapis.com/oauth2/v2/userinfo",
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      }
+    );
 
-  const userInfoResponse = await axios.get(
-    "https://www.googleapis.com/oauth2/v2/userinfo",
-    {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
-    }
-  );
+    return userInfoResponse.data;
+  } catch (error) {
+    console.log(error);
+  }
+};
 
-  console.log(userInfoResponse);
+const authGoogle = async (req, CLIENT_ID, CLIENT_SECRET, REDIRECT_URI) => {
+  try {
+    const code = googleAuthorizationCode(req);
+    console.log(code);
+    const { authError, client_id } = getErrorGoogle(req);
+    console.log(authError, client_id);
 
-  // Aquí puedes utilizar los datos de usuario en userInfoResponse.data
-  const { id, email, name, picture } = userInfoResponse.data;
-  // Realiza acciones adicionales con los datos del usuario, como crear una sesión, guardar en la base de datos, etc.
-  // Redirige al usuario a la página de inicio o a donde desees
-  res.redirect("/dashboard");
+    const accessToken = await getAccessToken(
+      code,
+      CLIENT_ID,
+      CLIENT_SECRET,
+      REDIRECT_URI
+    );
+
+    const getInfo = await getUserInformation(accessToken.access_token);
+
+    const decodedToken = jwt.decode(accessToken.id_token);
+
+    return {
+      code,
+      accessToken,
+      getInfo,
+      decodedToken,
+    };
+  } catch (error) {
+    console.log(error);
+  }
 };
 
 module.exports = {
@@ -193,4 +226,7 @@ module.exports = {
   signInGoogle,
   googleAuthorizationCode,
   getAccessToken,
+  getUserInformation,
+  authGoogle,
+  getErrorGoogle,
 };
