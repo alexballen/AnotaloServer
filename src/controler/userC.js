@@ -7,11 +7,7 @@ const {
   SignUp,
   SignIn,
   signInGoogle,
-  googleAuthorizationCode,
-  getAccessToken,
-  getUserInformation,
   authGoogle,
-  getErrorGoogle,
 } = require("../services/authServices.js");
 
 const getAllUser = async (req, res) => {
@@ -97,10 +93,10 @@ const getSingInGoogle = async (req, res) => {
     const authGoogle = await signInGoogle(CLIENT_ID, REDIRECT_URI, SCOPE);
     console.log(authGoogle);
 
+    // Redirige a la URL de autorización de Google
     res.redirect(authGoogle);
   } catch (error) {
-    console.log(error);
-    res.status(500);
+    console.log("Error:", error);
   }
 };
 
@@ -119,15 +115,6 @@ const getCodeAuthGoogle = async (req, res) => {
   }
 };
 
-const getErrorAuthGoogle = (req, res) => {
-  try {
-    const authError = getErrorGoogle(req);
-    console.log(authError);
-  } catch (error) {
-    console.log(error);
-  }
-};
-
 module.exports = {
   getAllUser,
   postSignUp,
@@ -135,5 +122,4 @@ module.exports = {
   postSendMail,
   getSingInGoogle,
   getCodeAuthGoogle,
-  getErrorAuthGoogle,
 };
