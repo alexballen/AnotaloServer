@@ -1,6 +1,8 @@
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const axios = require("axios");
+const { OAuth2Client } = require("google-auth-library");
+const { URLSearchParams } = require("url");
 const { authConstans } = require("../controler/constans.js");
 
 const emailExists = async (UserDb, email) => {
@@ -118,38 +120,62 @@ const SignIn = async (UserDb, email, password, res) => {
   }
 };
 
-const signInGoogle = async (CLIENT_ID, REDIRECT_URI, SCOPE) => {
+const verifyClientIdCredential = async (url) => {
   try {
-    if (CLIENT_ID && REDIRECT_URI && SCOPE) {
-      const authorizationUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${CLIENT_ID}&redirect_uri=${REDIRECT_URI}&response_type=code&scope=${encodeURIComponent(
-        SCOPE
-      )}`;
-      console.log(authorizationUrl);
+    //Extraigo la url que me pasa la funcion signInGoogle
+    const response = await axios.get(url);
 
-      return authorizationUrl;
+    //Guardo en una variable lo que me devuleve el responseUrl
+    const urlError = response.request.res.responseUrl;
+
+    //Con el metodo URLSearchParams elimino todo lo que esta antes del query
+    const params = new URLSearchParams(
+      urlError.substring(urlError.indexOf("?") + 1)
+    );
+
+    //Me guardo con el metodo get el valor del query authError
+    const authError = params.get("authError");
+
+    //Decodifico el valor de authError a utf-8
+    const decodedError = Buffer.from(authError, "base64").toString("utf-8");
+
+    //Elimino los caracteres que especiales, dejos solo el texto
+    const cleanDecodedError = decodedError.replace(/[^\x20-\x7E]/g, "");
+
+    //Si la credenciales de CLIENT_ID no son validas, devuelve un false como confirmacion
+    if (authError) {
+      console.log(cleanDecodedError);
+      return false;
     }
-
-    return { message: "Debes ingresar las variables de entorno" };
   } catch (error) {
-    console.log(error);
-    return { error: `${authConstans.error_in_function} SignIn` };
+    //Si las credenciales de CLIENT_ID son correctas devuelve un true como confirmacion y el codigo de error
+    console.log("Credencial CLIENT_ID validada, es correcta");
   }
+  return true;
+};
+
+const signInGoogle = async (CLIENT_ID, REDIRECT_URI, SCOPE) => {
+  if (!CLIENT_ID || !REDIRECT_URI || !SCOPE) {
+    return new Error("Debes ingresar todas las variables de entorno");
+  }
+
+  const authorizationUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${CLIENT_ID}&redirect_uri=${REDIRECT_URI}&response_type=code&scope=${encodeURIComponent(
+    SCOPE
+  )}`;
+
+  const result = await verifyClientIdCredential(authorizationUrl);
+
+  if (!result) {
+    return new Error("Credencial CLIENT_ID validada, es incorrecta");
+  }
+
+  return authorizationUrl;
 };
 
 const googleAuthorizationCode = (req) => {
   try {
     const { code } = req.query;
     return code;
-  } catch (error) {
-    console.log(error);
-  }
-};
-
-const getErrorGoogle = (req) => {
-  try {
-    const { authError } = req.query;
-    console.log(authError);
-    return authError;
   } catch (error) {
     console.log(error);
   }
@@ -193,10 +219,15 @@ const getUserInformation = async (accessToken) => {
 
 const authGoogle = async (req, CLIENT_ID, CLIENT_SECRET, REDIRECT_URI) => {
   try {
+    console.log("se inicio este servicio");
     const code = googleAuthorizationCode(req);
-    console.log(code);
-    const { authError, client_id } = getErrorGoogle(req);
-    console.log(authError, client_id);
+    if (code) {
+      console.log(code);
+    } else {
+      console.log(
+        "Verificar las credenciales CLIENT_ID,CLIENT_SECRET y REDIRECT_URI"
+      );
+    }
 
     const accessToken = await getAccessToken(
       code,
@@ -228,5 +259,4 @@ module.exports = {
   getAccessToken,
   getUserInformation,
   authGoogle,
-  getErrorGoogle,
 };
