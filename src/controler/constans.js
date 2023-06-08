@@ -1,8 +1,9 @@
 const authConstans = {
-  email_exists: "Correo ya existe",
+  email_exists: "Correo ya existe en la db",
   email_does_not_exist: "Correo no existe",
   valid_hash: "Validacion de hash incorrecta",
   error_in_function: "Error en funcion -->",
+  obligatory_field: "Campo obligatorio",
 };
 
 const userConstans = {
