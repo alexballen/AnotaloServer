@@ -5,14 +5,14 @@ const {
   postSignIn,
   postSendMail,
   getSingInGoogle,
-  getCodeAuthGoogle,
+  getAccessTokenGoogle,
 } = require("../controler/userC.js");
 
 const router = Router();
 
 router.get("/user", getAllUser);
-router.get("/auth/google/callback", getCodeAuthGoogle);
 router.get("/auth/google", getSingInGoogle);
+router.get("/auth/google/callback", getAccessTokenGoogle);
 router.post("/signup", postSignUp);
 router.post("/signin", postSignIn);
 router.post("/email", postSendMail);
