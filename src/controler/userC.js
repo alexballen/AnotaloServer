@@ -20,15 +20,28 @@ const getAllUser = async (req, res) => {
 
 const postSignUp = async (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    const { name, email, password, image, isAdmin } = req.body;
 
-    if (name && email && password) {
-      const result = await SignUp(User, name, email, password, res);
-      res.status(200).json(result);
-      return;
+    if (!name) {
+      throw new Error("El campo name es obligatorio en --> postSignUp");
+    }
+    if (!email) {
+      throw new Error("El campo email es obligatorio en --> postSignUp");
+    }
+    if (!password) {
+      throw new Error("El campo password es obligatorio en --> postSignUp");
     }
 
-    res.status(500).json({ message: `${userConstans.incomplete_data}` });
+    const obj = {
+      name,
+      email,
+      password,
+      image,
+      isAdmin,
+    };
+
+    const registerUser = await SignUp(User, obj);
+    res.status(200).json(registerUser);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -38,18 +51,17 @@ const postSignIn = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    if (email && password) {
-      const result = await SignIn(User, email, password, res);
-      res.status(200).json(result);
-      return;
+    if (!email) {
+      throw new Error("El campo email es obligatorio en --> postSignIn");
+    }
+    if (!password) {
+      throw new Error("El campo password es obligatorio en --> postSignIn");
     }
 
-    res.status(500).json({ message: `${userConstans.incomplete_data}` });
+    const userAuth = await SignIn(User, email, password);
+    res.status(200).json(userAuth);
   } catch (error) {
-    console.log(error);
-    res
-      .status(500)
-      .json({ message: `${userConstans.error_in_function} postSignIn` });
+    res.status(500).json({ error: error.message });
   }
 };
 
@@ -94,7 +106,7 @@ const getSingInGoogle = async (req, res) => {
   }
 };
 
-const getCodeAuthGoogle = async (req, res) => {
+const getAccessTokenGoogle = async (req, res) => {
   const clientId = process.env.CLIENT_ID;
   const clientSecret = process.env.CLIENT_SECRET;
   const redirectUrl = process.env.REDIRECT_URI;
@@ -104,7 +116,11 @@ const getCodeAuthGoogle = async (req, res) => {
 
     res.status(200).json(obj);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    if (error.message.includes("Error de autenticación")) {
+      res.status(401).json({ error: error.message });
+    } else {
+      res.status(500).json({ error: error.message });
+    }
   }
 };
 
@@ -114,5 +130,5 @@ module.exports = {
   postSignIn,
   postSendMail,
   getSingInGoogle,
-  getCodeAuthGoogle,
+  getAccessTokenGoogle,
 };
