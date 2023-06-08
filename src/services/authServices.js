@@ -7,11 +7,11 @@ const { authConstans } = require("../controler/constans.js");
 const emailExists = async (userDb, email) => {
   try {
     if (!userDb) {
-      throw new Error("El campo userDb es obligatorio");
+      throw new Error("El campo userDb es obligatorio en --> emailExists");
     }
 
     if (!email) {
-      throw new Error("El campo email es obligatorio");
+      throw new Error("El campo email es obligatorio en --> emailExists");
     }
 
     const emailSearch = await userDb.findOne({
@@ -27,7 +27,7 @@ const emailExists = async (userDb, email) => {
 const generateHash = async (password) => {
   try {
     if (!password) {
-      throw new Error("El campo password es obligatorio");
+      throw new Error("El campo password es obligatorio en --> generateHash");
     }
     if (password.length < 8) {
       throw new Error("El password debe tener minimo 8 caracteres");
@@ -56,62 +56,93 @@ const generateHash = async (password) => {
 const validHash = async (password, passwordHash) => {
   try {
     if (!password) {
-      throw new Error("El campo password es obligatorio");
+      throw new Error("El campo password es obligatorio en --> validHash");
     }
     if (!passwordHash) {
-      throw new Error("El campo passwordHash es obligatorio");
+      throw new Error("El campo passwordHash es obligatorio en --> validHash");
     }
     if (password.length < 8) {
       throw new Error("El password debe tener minimo 8 caracteres");
     }
 
     const validHashPassword = await bcrypt.compare(password, passwordHash);
-    console.log(validHashPassword);
+
     return validHashPassword;
   } catch (error) {
     throw error;
   }
 };
 
-const generateToken = async (UserDb, email) => {
+const generateToken = async (userDb, email) => {
   try {
-    const emailSearch = await emailExists(UserDb, email);
+    if (!userDb) {
+      throw new Error("El campo userDb es obligatorio en --> generateToken");
+    }
+    if (!email) {
+      throw new Error("El campo email es obligatorio --> generateToken");
+    }
+
+    const emailSearch = await emailExists(userDb, email);
 
     if (emailSearch) {
+      const { id, name, email } = emailSearch.dataValues;
       const user = {
-        id: emailSearch.id,
-        name: emailSearch.name,
-        email: emailSearch.email,
+        id,
+        name,
+        email,
       };
-
       const token = await jwt.sign(user, process.env.SECRET_TOKEN);
-
       return token;
     }
 
-    return emailSearch;
+    throw new Error("Correo no existe en la db");
   } catch (error) {
-    console.log(error);
-    return { error: `${authConstans.error_in_function} generateToken` };
+    throw error;
   }
 };
 
-const userDbCreate = async (UserDb, name, email, hashPassword) => {
+const userDbCreate = async (userDb, obj) => {
+  const { name, email, password } = obj;
   try {
-    const createUser = await UserDb.create({
-      name,
-      email,
-      password: hashPassword,
-    });
+    if (!userDb) {
+      throw new Error("El campo userDb es obligatorio en --> userDbCreate");
+    }
+    if (!name) {
+      throw new Error("El campo name es obligatorio en --> userDbCreate");
+    }
+    if (!email) {
+      throw new Error("El campo email es obligatorio en --> userDbCreate");
+    }
+    if (!password) {
+      throw new Error(
+        "El campo hashPassword es obligatorio en --> userDbCreate"
+      );
+    }
+
+    const createUser = await userDb.create(obj);
+
     return createUser;
   } catch (error) {
-    console.log(error);
-    return { error: `${authConstans.error_in_function} userDbCreate` };
+    throw error;
   }
 };
 
-const SignUp = async (userDb, name, email, password, res) => {
+const SignUp = async (userDb, obj) => {
+  const { name, email, password } = obj;
   try {
+    if (!userDb) {
+      throw new Error("El campo userDb es obligatorio en --> SignUp");
+    }
+    if (!name) {
+      throw new Error("El campo name es obligatorio en --> SignUp");
+    }
+    if (!email) {
+      throw new Error("El campo email es obligatorio en --> SignUp");
+    }
+    if (!password) {
+      throw new Error("El campo password es obligatorio en --> SignUp");
+    }
+
     const emailSearch = await emailExists(userDb, email);
 
     if (emailSearch) {
@@ -126,20 +157,30 @@ const SignUp = async (userDb, name, email, password, res) => {
       );
     }
 
-    const createUser = await userDbCreate(userDb, name, email, hashPassword);
+    const createUser = await userDbCreate(userDb, obj);
 
-    res.status(200).json(createUser);
+    return createUser;
   } catch (error) {
     throw error;
   }
 };
 
-const SignIn = async (UserDb, email, password, res) => {
+const SignIn = async (userDb, email, password) => {
   try {
-    const emailSearch = await emailExists(UserDb, email);
+    if (!userDb) {
+      throw new Error("El campo userDb es obligatorio en --> SignIn");
+    }
+    if (!email) {
+      throw new Error("El campo email es obligatorio en --> SignIn");
+    }
+    if (!password) {
+      throw new Error("El campo password es obligatorio en --> SignIn");
+    }
+
+    const emailSearch = await emailExists(userDb, email);
 
     if (!emailSearch) {
-      return { error: `${authConstans.email_does_not_exist}` };
+      throw new Error("Correo no existe en la db");
     }
 
     const validHashPassword = await validHash(
@@ -148,19 +189,26 @@ const SignIn = async (UserDb, email, password, res) => {
     );
 
     if (validHashPassword) {
-      const token = await generateToken(UserDb, email);
+      const token = await generateToken(userDb, email);
+
       return token;
     }
 
-    res.status(500).json({ message: `${authConstans.valid_hash}` });
+    throw new Error(
+      "Error en la generacion del token, verifica si tiene correctamente instalado JWT o alguno de los parametros no es correcto"
+    );
   } catch (error) {
-    console.log(error);
-    return { error: `${authConstans.error_in_function} SignIn` };
+    throw error;
   }
 };
 
 const verifyClientIdCredential = async (authorizationUrl) => {
   try {
+    if (!authorizationUrl) {
+      throw new Error(
+        "El campo authorizationUrl es obligatorio en --> verifyClientIdCredential"
+      );
+    }
     //Se guarda el objeto que devuelve la ejecucion de la funcion signInGoogle
     const getAuthorizationUrl = await axios.get(authorizationUrl);
 
@@ -169,7 +217,7 @@ const verifyClientIdCredential = async (authorizationUrl) => {
 
     //Con el metodo URLSearchParams elimino todo lo que esta antes del query urlError
     const urlParameters = new URLSearchParams(
-      getUrlError.substring(urlError.indexOf("?") + 1)
+      getUrlError.substring(getUrlError.indexOf("?") + 1)
     );
 
     //Me guardo con el metodo get el valor del query authError
@@ -183,10 +231,8 @@ const verifyClientIdCredential = async (authorizationUrl) => {
 
       //Elimino los caracteres especiales, dejo solo el texto
       cleanDecodedError = decodedError.replace(/[^\x20-\x7E]/g, "");
-    }
 
-    //Si la credenciales de CLIENT_ID no son validas, devuelve un false como confirmacion
-    if (authError) {
+      //Si la credenciales de CLIENT_ID no son validas, devuelve un false como confirmacion
       console.log("Credencial CLIENT_ID validada, es incorrecta");
       throw new Error(cleanDecodedError);
     }
@@ -201,15 +247,15 @@ const verifyClientIdCredential = async (authorizationUrl) => {
 const signInGoogle = async (clientId, redirectUrl, scope) => {
   try {
     if (!clientId) {
-      throw new Error("El clientId no puede estar vacío");
+      throw new Error("El campo clientId es obligatorio en --> signInGoogle");
     }
-
     if (!redirectUrl) {
-      throw new Error("El redirectUrl no puede estar vacío");
+      throw new Error(
+        "El campo redirectUrl es obligatorio en --> signInGoogle"
+      );
     }
-
     if (!scope) {
-      throw new Error("El scope no puede estar vacío");
+      throw new Error("El campo scope es obligatorio en --> signInGoogle");
     }
 
     const authorizationUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${redirectUrl}&response_type=code&scope=${encodeURIComponent(
@@ -226,10 +272,17 @@ const signInGoogle = async (clientId, redirectUrl, scope) => {
 
 const googleAuthorizationCode = (req) => {
   try {
-    const { code } = req.query;
-    if (!code) {
-      throw new Error("No hay codigo");
+    if (!req) {
+      throw new Error(
+        "El campo req es obligatorio en --> googleAuthorizationCode"
+      );
     }
+    const { code } = req.query;
+
+    if (!code) {
+      throw new Error("Codigo no encontrado");
+    }
+
     return code;
   } catch (error) {
     throw error;
@@ -238,6 +291,23 @@ const googleAuthorizationCode = (req) => {
 
 const getAccessToken = async (code, clientId, clientSecret, redirectUrl) => {
   try {
+    if (!code) {
+      throw new Error("El campo code es obligatorio en --> getAccessToken");
+    }
+    if (!clientId) {
+      throw new Error("El campo clientId es obligatorio en --> getAccessToken");
+    }
+    if (!clientSecret) {
+      throw new Error(
+        "El campo clientSecret es obligatorio en --> getAccessToken"
+      );
+    }
+    if (!redirectUrl) {
+      throw new Error(
+        "El campo redirectUrl es obligatorio en --> getAccessToken"
+      );
+    }
+
     const tokenResponse = await axios.post(
       "https://oauth2.googleapis.com/token",
       {
@@ -251,12 +321,27 @@ const getAccessToken = async (code, clientId, clientSecret, redirectUrl) => {
 
     return tokenResponse.data;
   } catch (error) {
-    throw error;
+    if (error.response && error.response.status === 401) {
+      console.log(
+        "Error de autenticación: Credencial clientSecret inválida o insuficiente"
+      );
+      throw new Error(
+        "Error de autenticación: Credencial clientSecret inválida o insuficiente"
+      );
+    } else {
+      throw error;
+    }
   }
 };
 
 const getUserInformation = async (accessToken) => {
   try {
+    if (!accessToken) {
+      throw new Error(
+        "El campo accessToken es obligatorio en --> getUserInformation"
+      );
+    }
+
     const userInfoResponse = await axios.get(
       "https://www.googleapis.com/oauth2/v2/userinfo",
       {
@@ -268,16 +353,40 @@ const getUserInformation = async (accessToken) => {
 
     return userInfoResponse.data;
   } catch (error) {
-    throw error;
+    if (error.response && error.response.status === 401) {
+      console.log(
+        "Error de autenticación: Credenciales de accessToken inválidos o insuficientes"
+      );
+      throw new Error(
+        "Error de autenticación: Credenciales de accessToken inválidos o insuficientes"
+      );
+    } else {
+      console.log(error);
+      throw error;
+    }
   }
 };
 
 const authGoogle = async (req, clientId, clientSecret, redirectUrl) => {
   try {
+    if (!req) {
+      throw new Error("El campo req es obligatorio en --> authGoogle");
+    }
+    if (!clientId) {
+      throw new Error("El campo clientId es obligatorio en --> authGoogle");
+    }
+    if (!clientSecret) {
+      throw new Error("El campo clientSecret es obligatorio en --> authGoogle");
+    }
+    if (!redirectUrl) {
+      throw new Error("El campo redirectUrl es obligatorio en --> authGoogle");
+    }
+
     //El codigo se recibe si la funcion signInGoogle se completa sin errores, google Auth devuelve un codigo de confirmacion y autorizacion para proceder con este a solicitar el token.
     const code = googleAuthorizationCode(req);
 
     //Se solicita el token con las credenciales code, clientId, clientSecret, redirectUrl, si son correctas las credenciales se genera el token con la informacion del usurio logueado.
+
     const accessToken = await getAccessToken(
       code,
       clientId,
@@ -289,7 +398,7 @@ const authGoogle = async (req, clientId, clientSecret, redirectUrl) => {
     const getInfo = await getUserInformation(accessToken.access_token);
 
     //Se decodifica del token el id_token, nos muestra la info del usuario logueado.
-    const decodedToken = jwt.decode(accessToken.id_token);
+    const decodedToken = await jwt.decode(accessToken.id_token);
 
     return {
       code,
@@ -307,5 +416,4 @@ module.exports = {
   SignIn,
   signInGoogle,
   authGoogle,
-  emailExists,
 };
