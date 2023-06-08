@@ -1,6 +1,4 @@
 const { User } = require("../db.js");
-const axios = require("axios");
-const jwt = require("jsonwebtoken");
 const { userConstans, templateConstans } = require("./constans.js");
 const { emailSendProcess } = require("../services/emailServices.js");
 const {
@@ -13,12 +11,10 @@ const {
 const getAllUser = async (req, res) => {
   try {
     const allUser = await User.findAll();
+
     res.status(200).json(allUser);
   } catch (error) {
-    console.log(error);
-    res
-      .status(500)
-      .json({ message: `${userConstans.error_in_function} getAllUser` });
+    res.status(500).json({ error: error.message });
   }
 };
 
@@ -34,10 +30,7 @@ const postSignUp = async (req, res) => {
 
     res.status(500).json({ message: `${userConstans.incomplete_data}` });
   } catch (error) {
-    console.log(error);
-    res
-      .status(500)
-      .json({ message: `${userConstans.error_in_function} postSignUp` });
+    res.status(500).json({ error: error.message });
   }
 };
 
@@ -85,33 +78,33 @@ const postSendMail = async (req, res) => {
 };
 
 const getSingInGoogle = async (req, res) => {
-  try {
-    const CLIENT_ID = process.env.CLIENT_ID;
-    const REDIRECT_URI = process.env.REDIRECT_URI;
-    const SCOPE = process.env.SCOPE;
+  const clientId = process.env.CLIENT_ID;
+  const redirectUrl = process.env.REDIRECT_URI;
+  const scope = process.env.SCOPE;
 
-    const authGoogle = await signInGoogle(CLIENT_ID, REDIRECT_URI, SCOPE);
+  try {
+    const authGoogle = await signInGoogle(clientId, redirectUrl, scope);
     console.log(authGoogle);
 
     // Redirige a la URL de autorización de Google
-    res.redirect(authGoogle);
+    /* res.redirect(authGoogle); */
+    res.status(200).json(authGoogle);
   } catch (error) {
-    console.log("Error:", error);
+    res.status(500).json({ error: error.message });
   }
 };
 
 const getCodeAuthGoogle = async (req, res) => {
+  const clientId = process.env.CLIENT_ID;
+  const clientSecret = process.env.CLIENT_SECRET;
+  const redirectUrl = process.env.REDIRECT_URI;
+
   try {
-    const CLIENT_ID = process.env.CLIENT_ID;
-    const CLIENT_SECRET = process.env.CLIENT_SECRET;
-    const REDIRECT_URI = process.env.REDIRECT_URI;
+    const obj = await authGoogle(req, clientId, clientSecret, redirectUrl);
 
-    const obj = await authGoogle(req, CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
-    console.log(obj);
-
-    res.status(200).json("exito");
+    res.status(200).json(obj);
   } catch (error) {
-    console.log(error);
+    res.status(500).json({ error: error.message });
   }
 };
 
