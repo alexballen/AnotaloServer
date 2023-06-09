@@ -6,6 +6,7 @@ const {
   SignIn,
   signInGoogle,
   authGoogle,
+  generatePassword,
 } = require("../services/authServices.js");
 
 const getAllUser = async (req, res) => {
@@ -32,7 +33,7 @@ const postSignUp = async (req, res) => {
       throw new Error("El campo password es obligatorio en --> postSignUp");
     }
 
-    const obj = {
+    const userDataByBody = {
       name,
       email,
       password,
@@ -40,7 +41,7 @@ const postSignUp = async (req, res) => {
       isAdmin,
     };
 
-    const registerUser = await SignUp(User, obj);
+    const registerUser = await SignUp(User, userDataByBody);
     res.status(200).json(registerUser);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -113,8 +114,24 @@ const getAccessTokenGoogle = async (req, res) => {
 
   try {
     const obj = await authGoogle(req, clientId, clientSecret, redirectUrl);
+    const { getInfo } = obj;
 
-    res.status(200).json(obj);
+    const passwordLength = process.env.PASSWORD_LENGTH;
+    const password = generatePassword(passwordLength);
+
+    const { name, email, picture, verified_email } = getInfo;
+
+    const emailuser = "alex5@gmail.com";
+    const userDataByTokenGoogle = {
+      name,
+      email: emailuser,
+      password,
+      image: picture,
+    };
+
+    const registerUser = await SignUp(User, userDataByTokenGoogle);
+
+    res.status(200).json(registerUser);
   } catch (error) {
     if (error.message.includes("Error de autenticación")) {
       res.status(401).json({ error: error.message });
