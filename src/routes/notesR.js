@@ -1,9 +1,16 @@
 const { Router } = require("express");
-const { getAllNotes, postNotes } = require("../controler/notesC.js");
+const {
+  getAllNotes,
+  postNotes,
+  deleteNotes,
+  editNote,
+} = require("../controler/notesC.js");
 
 const router = Router();
 
 router.get("/", getAllNotes);
-router.post("/", postNotes);
+router.post("/:idUser", postNotes);
+router.delete("/:idNote", deleteNotes);
+router.patch("/:idNote", editNote);
 
 module.exports = router;
