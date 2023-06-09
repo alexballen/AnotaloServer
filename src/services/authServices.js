@@ -20,6 +20,7 @@ const emailExists = async (userDb, email) => {
 
     return emailSearch;
   } catch (error) {
+    console.log(error);
     throw error;
   }
 };
@@ -49,6 +50,7 @@ const generateHash = async (password) => {
 
     return hashPassword;
   } catch (error) {
+    console.log(error);
     throw error;
   }
 };
@@ -69,6 +71,7 @@ const validHash = async (password, passwordHash) => {
 
     return validHashPassword;
   } catch (error) {
+    console.log(error);
     throw error;
   }
 };
@@ -97,12 +100,13 @@ const generateToken = async (userDb, email) => {
 
     throw new Error("Correo no existe en la db");
   } catch (error) {
+    console.log(error);
     throw error;
   }
 };
 
-const userDbCreate = async (userDb, obj) => {
-  const { name, email, password } = obj;
+const userDbCreate = async (userDb, userDataObject) => {
+  const { name, email, password } = userDataObject;
   try {
     if (!userDb) {
       throw new Error("El campo userDb es obligatorio en --> userDbCreate");
@@ -119,16 +123,18 @@ const userDbCreate = async (userDb, obj) => {
       );
     }
 
-    const createUser = await userDb.create(obj);
+    const createUser = await userDb.create(userDataObject);
 
     return createUser;
   } catch (error) {
+    console.log(error);
     throw error;
   }
 };
 
-const SignUp = async (userDb, obj) => {
-  const { name, email, password } = obj;
+const SignUp = async (userDb, userDataObject) => {
+  const { name, email, password, image, isAdmin } = userDataObject;
+
   try {
     if (!userDb) {
       throw new Error("El campo userDb es obligatorio en --> SignUp");
@@ -157,10 +163,19 @@ const SignUp = async (userDb, obj) => {
       );
     }
 
-    const createUser = await userDbCreate(userDb, obj);
+    const userDataObjectModifiedByHash = {
+      name,
+      email,
+      password: hashPassword,
+      image,
+      isAdmin,
+    };
+
+    const createUser = await userDbCreate(userDb, userDataObjectModifiedByHash);
 
     return createUser;
   } catch (error) {
+    console.log(error);
     throw error;
   }
 };
@@ -198,6 +213,7 @@ const SignIn = async (userDb, email, password) => {
       "Error en la generacion del token, verifica si tiene correctamente instalado JWT o alguno de los parametros no es correcto"
     );
   } catch (error) {
+    console.log(error);
     throw error;
   }
 };
@@ -238,6 +254,7 @@ const verifyClientIdCredential = async (authorizationUrl) => {
     }
   } catch (error) {
     //Si las credenciales de CLIENT_ID son correctas devuelve un true como confirmacion y el codigo de error
+    console.log(error);
     throw error;
   }
   console.log("Credencial CLIENT_ID validada, es correcta");
@@ -266,6 +283,7 @@ const signInGoogle = async (clientId, redirectUrl, scope) => {
 
     return authorizationUrl;
   } catch (error) {
+    console.log(error);
     throw error;
   }
 };
@@ -285,6 +303,7 @@ const googleAuthorizationCode = (req) => {
 
     return code;
   } catch (error) {
+    console.log(error);
     throw error;
   }
 };
@@ -329,6 +348,7 @@ const getAccessToken = async (code, clientId, clientSecret, redirectUrl) => {
         "Error de autenticación: Credencial clientSecret inválida o insuficiente"
       );
     } else {
+      console.log(error);
       throw error;
     }
   }
@@ -407,6 +427,25 @@ const authGoogle = async (req, clientId, clientSecret, redirectUrl) => {
       decodedToken,
     };
   } catch (error) {
+    console.log(error);
+    throw error;
+  }
+};
+
+const generatePassword = (passwordLength) => {
+  try {
+    const characters = process.env.GENERATE_PASSWORD;
+    let password = "";
+
+    for (let i = 0; i < passwordLength; i++) {
+      let index = Math.floor(Math.random() * characters.length);
+      password += characters.charAt(index);
+    }
+    console.log("este es passwor aleatorio", password);
+
+    return password;
+  } catch (error) {
+    console.log(error);
     throw error;
   }
 };
@@ -416,4 +455,5 @@ module.exports = {
   SignIn,
   signInGoogle,
   authGoogle,
+  generatePassword,
 };
