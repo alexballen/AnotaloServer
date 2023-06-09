@@ -1,4 +1,4 @@
-const { User } = require("../db.js");
+const { User, Notes } = require("../db.js");
 const { userConstans, templateConstans } = require("./constans.js");
 const { emailSendProcess } = require("../services/emailServices.js");
 const {
@@ -11,7 +11,11 @@ const {
 
 const getAllUser = async (req, res) => {
   try {
-    const allUser = await User.findAll();
+    const allUser = await User.findAll({
+      include: {
+        model: Notes,
+      },
+    });
 
     res.status(200).json(allUser);
   } catch (error) {
@@ -113,15 +117,18 @@ const getAccessTokenGoogle = async (req, res) => {
   const redirectUrl = process.env.REDIRECT_URI;
 
   try {
-    const obj = await authGoogle(req, clientId, clientSecret, redirectUrl);
-    const { getInfo } = obj;
+    const accessToken = await authGoogle(
+      req,
+      clientId,
+      clientSecret,
+      redirectUrl
+    );
+    const { name, email, picture, verified_email } = accessToken.getInfo;
 
     const passwordLength = process.env.PASSWORD_LENGTH;
     const password = generatePassword(passwordLength);
 
-    const { name, email, picture, verified_email } = getInfo;
-
-    const emailuser = "alex5@gmail.com";
+    const emailuser = "alex6@gmail.com";
     const userDataByTokenGoogle = {
       name,
       email: emailuser,
