@@ -7,6 +7,8 @@ const {
   signInGoogle,
   authGoogle,
   generatePassword,
+  emailExists,
+  generateToken,
 } = require("../services/authServices.js");
 
 const getAllUser = async (req, res) => {
@@ -24,17 +26,18 @@ const getAllUser = async (req, res) => {
 };
 
 const postSignUp = async (req, res) => {
+  const workFactor = process.env.BCRYPT_WORK_FACTOR;
   try {
     const { name, email, password, image, isAdmin } = req.body;
 
     if (!name) {
-      throw new Error("El campo name es obligatorio en --> postSignUp");
+      throw new Error("El campo name es obligatorio");
     }
     if (!email) {
-      throw new Error("El campo email es obligatorio en --> postSignUp");
+      throw new Error("El campo email es obligatorio");
     }
     if (!password) {
-      throw new Error("El campo password es obligatorio en --> postSignUp");
+      throw new Error("El campo password es obligatorio");
     }
 
     const userDataByBody = {
@@ -45,7 +48,7 @@ const postSignUp = async (req, res) => {
       isAdmin,
     };
 
-    const registerUser = await SignUp(User, userDataByBody);
+    const registerUser = await SignUp(User, userDataByBody, workFactor);
     res.status(200).json(registerUser);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -57,10 +60,10 @@ const postSignIn = async (req, res) => {
     const { email, password } = req.body;
 
     if (!email) {
-      throw new Error("El campo email es obligatorio en --> postSignIn");
+      throw new Error("El campo email es obligatorio");
     }
     if (!password) {
-      throw new Error("El campo password es obligatorio en --> postSignIn");
+      throw new Error("El campo password es obligatorio");
     }
 
     const userAuth = await SignIn(User, email, password);
@@ -101,10 +104,7 @@ const getSingInGoogle = async (req, res) => {
 
   try {
     const authGoogle = await signInGoogle(clientId, redirectUrl, scope);
-    console.log(authGoogle);
 
-    // Redirige a la URL de autorización de Google
-    /* res.redirect(authGoogle); */
     res.status(200).json(authGoogle);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -115,36 +115,52 @@ const getAccessTokenGoogle = async (req, res) => {
   const clientId = process.env.CLIENT_ID;
   const clientSecret = process.env.CLIENT_SECRET;
   const redirectUrl = process.env.REDIRECT_URI;
+  const workFactor = process.env.BCRYPT_WORK_FACTOR;
+  const passwordLength = process.env.PASSWORD_LENGTH;
+  const characters = process.env.GENERATE_PASSWORD;
+
+  const objeto = req.body;
+
+  const code = Object.keys(objeto)[0];
 
   try {
     const accessToken = await authGoogle(
-      req,
+      code,
       clientId,
       clientSecret,
       redirectUrl
     );
+
     const { name, email, picture, verified_email } = accessToken.getInfo;
 
-    const passwordLength = process.env.PASSWORD_LENGTH;
-    const password = generatePassword(passwordLength);
+    const emailSearch = await emailExists(User, email);
 
-    const emailuser = "alex6@gmail.com";
-    const userDataByTokenGoogle = {
-      name,
-      email: emailuser,
-      password,
-      image: picture,
-    };
+    if (!emailSearch) {
+      const password = generatePassword(passwordLength, characters);
 
-    const registerUser = await SignUp(User, userDataByTokenGoogle);
+      const userDataByTokenGoogle = {
+        name,
+        email,
+        password,
+        image: picture,
+      };
 
-    res.status(200).json(registerUser);
+      await SignUp(User, userDataByTokenGoogle, workFactor);
+
+      const token = await generateToken(User, email);
+      console.log("ESTE ES EL TOKEN 1 --------------", token);
+      res.status(200).json(token);
+    }
+
+    const token = await generateToken(User, email);
+    console.log("ESTE ES EL TOKEN 2 --------------", token);
+    res.status(200).json(token);
   } catch (error) {
-    if (error.message.includes("Error de autenticación")) {
+    /* if (error.message.includes("Error de autenticación")) {
       res.status(401).json({ error: error.message });
     } else {
       res.status(500).json({ error: error.message });
-    }
+    } */
   }
 };
 
