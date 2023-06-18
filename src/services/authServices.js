@@ -2,7 +2,6 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const axios = require("axios");
 const { URLSearchParams } = require("url");
-const { authConstans } = require("../controler/constans.js");
 
 const emailExists = async (userDb, email) => {
   try {
@@ -25,8 +24,13 @@ const emailExists = async (userDb, email) => {
   }
 };
 
-const generateHash = async (password) => {
+const generateHash = async (password, workFactorParam) => {
   try {
+    if (!workFactorParam) {
+      throw new Error(
+        "El campo workFactorParam es obligatorio en --> generateHash"
+      );
+    }
     if (!password) {
       throw new Error("El campo password es obligatorio en --> generateHash");
     }
@@ -34,7 +38,7 @@ const generateHash = async (password) => {
       throw new Error("El password debe tener minimo 8 caracteres");
     }
 
-    const workFactor = parseInt(process.env.BCRYPT_WORK_FACTOR);
+    const workFactor = parseInt(workFactorParam);
 
     if (!workFactor) {
       throw new Error(
@@ -69,6 +73,10 @@ const validHash = async (password, passwordHash) => {
 
     const validHashPassword = await bcrypt.compare(password, passwordHash);
 
+    if (!validHashPassword) {
+      throw new Error("Contraseña Incorrecta");
+    }
+
     return validHashPassword;
   } catch (error) {
     console.log(error);
@@ -94,13 +102,33 @@ const generateToken = async (userDb, email) => {
         name,
         email,
       };
-      const token = await jwt.sign(user, process.env.SECRET_TOKEN);
+      const token = jwt.sign(user, process.env.SECRET_TOKEN);
       return token;
     }
 
-    throw new Error("Correo no existe en la db");
+    throw new Error("Correo no existe");
   } catch (error) {
     console.log(error);
+    throw error;
+  }
+};
+
+const validToken = (token) => {
+  try {
+    if (!token) {
+      throw new Error("El campo token es obligatorio en --> validToken");
+    }
+
+    const decodedToken = jwt.verify(token, process.env.SECRET_TOKEN);
+    console.log("Token válido:", decodedToken);
+
+    return true;
+  } catch (error) {
+    if (error.name === "TokenExpiredError") {
+      console.log("El token ha expirado ", error);
+    } else {
+      console.log("Error al validar el token: ", error);
+    }
     throw error;
   }
 };
@@ -132,7 +160,7 @@ const userDbCreate = async (userDb, userDataObject) => {
   }
 };
 
-const SignUp = async (userDb, userDataObject) => {
+const SignUp = async (userDb, userDataObject, workFactorParam) => {
   const { name, email, password, image, isAdmin } = userDataObject;
 
   try {
@@ -152,10 +180,12 @@ const SignUp = async (userDb, userDataObject) => {
     const emailSearch = await emailExists(userDb, email);
 
     if (emailSearch) {
-      throw new Error("Correo ya existe en la db");
+      throw new Error(
+        "No se puede registrar, por que el correo ya existe, ingrese un correo diferente o si ya esta registrado inicie sesion"
+      );
     }
 
-    const hashPassword = await generateHash(password);
+    const hashPassword = await generateHash(password, workFactorParam);
 
     if (!hashPassword) {
       throw new Error(
@@ -173,7 +203,10 @@ const SignUp = async (userDb, userDataObject) => {
 
     const createUser = await userDbCreate(userDb, userDataObjectModifiedByHash);
 
-    return createUser;
+    return {
+      createUser,
+      message: "Registro exitoso",
+    };
   } catch (error) {
     console.log(error);
     throw error;
@@ -195,7 +228,7 @@ const SignIn = async (userDb, email, password) => {
     const emailSearch = await emailExists(userDb, email);
 
     if (!emailSearch) {
-      throw new Error("Correo no existe en la db");
+      throw new Error("Correo no existe");
     }
 
     const validHashPassword = await validHash(
@@ -206,12 +239,13 @@ const SignIn = async (userDb, email, password) => {
     if (validHashPassword) {
       const token = await generateToken(userDb, email);
 
-      return token;
+      return {
+        token,
+        message: "Inicio de sesion exitoso",
+      };
     }
 
-    throw new Error(
-      "Error en la generacion del token, verifica si tiene correctamente instalado JWT o alguno de los parametros no es correcto"
-    );
+    throw new Error("Contraseña Incorrecta");
   } catch (error) {
     console.log(error);
     throw error;
@@ -282,26 +316,6 @@ const signInGoogle = async (clientId, redirectUrl, scope) => {
     await verifyClientIdCredential(authorizationUrl);
 
     return authorizationUrl;
-  } catch (error) {
-    console.log(error);
-    throw error;
-  }
-};
-
-const googleAuthorizationCode = (req) => {
-  try {
-    if (!req) {
-      throw new Error(
-        "El campo req es obligatorio en --> googleAuthorizationCode"
-      );
-    }
-    const { code } = req.query;
-
-    if (!code) {
-      throw new Error("Codigo no encontrado");
-    }
-
-    return code;
   } catch (error) {
     console.log(error);
     throw error;
@@ -387,10 +401,10 @@ const getUserInformation = async (accessToken) => {
   }
 };
 
-const authGoogle = async (req, clientId, clientSecret, redirectUrl) => {
+const authGoogle = async (code, clientId, clientSecret, redirectUrl) => {
   try {
-    if (!req) {
-      throw new Error("El campo req es obligatorio en --> authGoogle");
+    if (!code) {
+      throw new Error("El campo code es obligatorio en --> authGoogle");
     }
     if (!clientId) {
       throw new Error("El campo clientId es obligatorio en --> authGoogle");
@@ -401,9 +415,6 @@ const authGoogle = async (req, clientId, clientSecret, redirectUrl) => {
     if (!redirectUrl) {
       throw new Error("El campo redirectUrl es obligatorio en --> authGoogle");
     }
-
-    //El codigo se recibe si la funcion signInGoogle se completa sin errores, google Auth devuelve un codigo de confirmacion y autorizacion para proceder con este a solicitar el token.
-    const code = googleAuthorizationCode(req);
 
     //Se solicita el token con las credenciales code, clientId, clientSecret, redirectUrl, si son correctas las credenciales se genera el token con la informacion del usurio logueado.
 
@@ -418,7 +429,7 @@ const authGoogle = async (req, clientId, clientSecret, redirectUrl) => {
     const getInfo = await getUserInformation(accessToken.access_token);
 
     //Se decodifica del token el id_token, nos muestra la info del usuario logueado.
-    const decodedToken = await jwt.decode(accessToken.id_token);
+    const decodedToken = jwt.decode(accessToken.id_token);
 
     return {
       code,
@@ -432,16 +443,14 @@ const authGoogle = async (req, clientId, clientSecret, redirectUrl) => {
   }
 };
 
-const generatePassword = (passwordLength) => {
+const generatePassword = (passwordLength, characters) => {
   try {
-    const characters = process.env.GENERATE_PASSWORD;
     let password = "";
 
     for (let i = 0; i < passwordLength; i++) {
       let index = Math.floor(Math.random() * characters.length);
       password += characters.charAt(index);
     }
-    console.log("este es passwor aleatorio", password);
 
     return password;
   } catch (error) {
@@ -456,4 +465,7 @@ module.exports = {
   signInGoogle,
   authGoogle,
   generatePassword,
+  emailExists,
+  generateToken,
+  validToken,
 };
