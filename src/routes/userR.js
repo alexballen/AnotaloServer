@@ -12,7 +12,7 @@ const router = Router();
 
 router.get("/user", getAllUser);
 router.get("/auth/google", getSingInGoogle);
-router.get("/auth/google/callback", getAccessTokenGoogle);
+router.post("/auth/google/callback", getAccessTokenGoogle);
 router.post("/signup", postSignUp);
 router.post("/signin", postSignIn);
 router.post("/email", postSendMail);
