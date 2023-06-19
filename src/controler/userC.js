@@ -119,48 +119,60 @@ const getAccessTokenGoogle = async (req, res) => {
   const passwordLength = process.env.PASSWORD_LENGTH;
   const characters = process.env.GENERATE_PASSWORD;
 
-  const objeto = req.body;
-
-  const code = Object.keys(objeto)[0];
+  const { googleAuthorizationCode, email, password } = req.body;
 
   try {
-    const accessToken = await authGoogle(
-      code,
-      clientId,
-      clientSecret,
-      redirectUrl
-    );
+    if (email && password && !googleAuthorizationCode) {
+      if (!email) {
+        throw new Error("El campo email es obligatorio");
+      }
+      if (!password) {
+        throw new Error("El campo password es obligatorio");
+      }
 
-    const { name, email, picture, verified_email } = accessToken.getInfo;
-
-    const emailSearch = await emailExists(User, email);
-
-    if (!emailSearch) {
-      const password = generatePassword(passwordLength, characters);
-
-      const userDataByTokenGoogle = {
-        name,
-        email,
-        password,
-        image: picture,
-      };
-
-      await SignUp(User, userDataByTokenGoogle, workFactor);
-
-      const token = await generateToken(User, email);
-      console.log("ESTE ES EL TOKEN 1 --------------", token);
-      res.status(200).json(token);
+      const userAuth = await SignIn(User, email, password);
+      res.status(200).json(userAuth);
     }
 
-    const token = await generateToken(User, email);
-    console.log("ESTE ES EL TOKEN 2 --------------", token);
-    res.status(200).json(token);
+    if (!email && !password && googleAuthorizationCode) {
+      const accessToken = await authGoogle(
+        googleAuthorizationCode,
+        clientId,
+        clientSecret,
+        redirectUrl
+      );
+
+      const { name, email, picture, verified_email } = accessToken.getInfo;
+
+      const emailSearch = await emailExists(User, email);
+
+      if (!emailSearch) {
+        const password = generatePassword(passwordLength, characters);
+
+        const userDataByTokenGoogle = {
+          name,
+          email,
+          password,
+          image: picture,
+        };
+
+        await SignUp(User, userDataByTokenGoogle, workFactor);
+
+        const token = await generateToken(User, email);
+        console.log("ESTE ES EL TOKEN 1 --------------", token);
+        res.status(200).json(token);
+      }
+
+      const token = await generateToken(User, email);
+      console.log("ESTE ES EL TOKEN 2 --------------", token);
+      res.status(200).json(token);
+    }
   } catch (error) {
-    /* if (error.message.includes("Error de autenticación")) {
+    if (error.message.includes("Error de autenticación")) {
       res.status(401).json({ error: error.message });
     } else {
       res.status(500).json({ error: error.message });
-    } */
+    }
   }
 };
 
