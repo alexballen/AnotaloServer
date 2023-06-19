@@ -14,7 +14,7 @@ router.get("/user", getAllUser);
 router.get("/auth/google", getSingInGoogle);
 router.post("/auth/google/callback", getAccessTokenGoogle);
 router.post("/signup", postSignUp);
-router.post("/signin", postSignIn);
+/* router.post("/signin", postSignIn); */
 router.post("/email", postSendMail);
 
 module.exports = router;
