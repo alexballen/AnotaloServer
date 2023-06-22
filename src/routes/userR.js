@@ -2,19 +2,19 @@ const { Router } = require("express");
 const {
   getAllUser,
   postSignUp,
-  postSignIn,
   postSendMail,
   getSingInGoogle,
   getAccessTokenGoogle,
+  verificationToken,
 } = require("../controler/userC.js");
 
 const router = Router();
 
 router.get("/user", getAllUser);
 router.get("/auth/google", getSingInGoogle);
-router.post("/auth/google/callback", getAccessTokenGoogle);
+router.post("/signin", getAccessTokenGoogle);
 router.post("/signup", postSignUp);
-/* router.post("/signin", postSignIn); */
 router.post("/email", postSendMail);
+router.post("/verification", verificationToken);
 
 module.exports = router;
