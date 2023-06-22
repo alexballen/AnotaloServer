@@ -1,10 +1,16 @@
 const { Notes, User } = require("../db.js");
 
 const getAllNotes = async (req, res) => {
+  const { email } = req.body;
   try {
-    const allNotes = await Notes.findAll({
-      include: { model: User },
+    if (!email) {
+      throw new Error("No se encontró el email");
+    }
+    const allNotes = await User.findAll({
+      where: { email },
+      include: { model: Notes },
     });
+    console.log(allNotes);
 
     res.status(200).json(allNotes);
   } catch (error) {
@@ -19,13 +25,13 @@ const getAllNotes = async (req, res) => {
 const postNotes = async (req, res) => {
   const { name, description, importance } = req.body;
   const { idUser } = req.params;
+  console.log(idUser);
   try {
     const exitsUser = await User.findByPk(idUser);
 
     if (!exitsUser) {
       throw new Error("No se encontró el usuario");
     }
-
     const newNote = await Notes.create({
       name,
       description,
@@ -46,6 +52,7 @@ const postNotes = async (req, res) => {
 
 const deleteNotes = async (req, res) => {
   const { idNote } = req.params;
+  console.log(idNote);
   try {
     const searchIdNote = await Notes.findOne({
       where: { id: idNote },
@@ -75,12 +82,23 @@ const deleteNotes = async (req, res) => {
 const editNote = async (req, res) => {
   const { idNote } = req.params;
   const { name, description, importance } = req.body;
+
   try {
     const searchIdNote = await Notes.findOne({
       where: { id: idNote },
     });
     if (searchIdNote === null) {
       throw new Error("La nota no existe en la base de datos");
+    }
+
+    if (
+      importance !== "high" &&
+      importance !== "medium" &&
+      importance !== "low"
+    ) {
+      throw new Error(
+        "La nota debe tener un esatdo de importancia high, medium o low"
+      );
     }
 
     await Notes.update(
