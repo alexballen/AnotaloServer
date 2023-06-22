@@ -8,7 +8,7 @@ const {
 
 const router = Router();
 
-router.get("/", getAllNotes);
+router.post("/", getAllNotes);
 router.post("/:idUser", postNotes);
 router.delete("/:idNote", deleteNotes);
 router.patch("/:idNote", editNote);
