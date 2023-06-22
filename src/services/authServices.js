@@ -120,9 +120,8 @@ const validToken = (token) => {
     }
 
     const decodedToken = jwt.verify(token, process.env.SECRET_TOKEN);
-    console.log("Token válido:", decodedToken);
 
-    return true;
+    return decodedToken;
   } catch (error) {
     if (error.name === "TokenExpiredError") {
       console.log("El token ha expirado ", error);
