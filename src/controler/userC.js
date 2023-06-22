@@ -9,6 +9,7 @@ const {
   generatePassword,
   emailExists,
   generateToken,
+  validToken,
 } = require("../services/authServices.js");
 
 const getAllUser = async (req, res) => {
@@ -50,24 +51,6 @@ const postSignUp = async (req, res) => {
 
     const registerUser = await SignUp(User, userDataByBody, workFactor);
     res.status(200).json(registerUser);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-};
-
-const postSignIn = async (req, res) => {
-  try {
-    const { email, password } = req.body;
-
-    if (!email) {
-      throw new Error("El campo email es obligatorio");
-    }
-    if (!password) {
-      throw new Error("El campo password es obligatorio");
-    }
-
-    const userAuth = await SignIn(User, email, password);
-    res.status(200).json(userAuth);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -119,10 +102,11 @@ const getAccessTokenGoogle = async (req, res) => {
   const passwordLength = process.env.PASSWORD_LENGTH;
   const characters = process.env.GENERATE_PASSWORD;
 
-  const { googleAuthorizationCode, email, password } = req.body;
+  const { code, email, password } = req.body;
+  console.log("Este es codigo de autorizacion de Google -------> ", code);
 
   try {
-    if (email && password && !googleAuthorizationCode) {
+    if (!code) {
       if (!email) {
         throw new Error("El campo email es obligatorio");
       }
@@ -134,9 +118,12 @@ const getAccessTokenGoogle = async (req, res) => {
       res.status(200).json(userAuth);
     }
 
-    if (!email && !password && googleAuthorizationCode) {
+    if (!email && !password) {
+      if (!code) {
+        throw new Error("No se recibio codigo de Autorizacion de Google");
+      }
       const accessToken = await authGoogle(
-        googleAuthorizationCode,
+        code,
         clientId,
         clientSecret,
         redirectUrl
@@ -159,12 +146,10 @@ const getAccessTokenGoogle = async (req, res) => {
         await SignUp(User, userDataByTokenGoogle, workFactor);
 
         const token = await generateToken(User, email);
-        console.log("ESTE ES EL TOKEN 1 --------------", token);
         res.status(200).json(token);
       }
 
       const token = await generateToken(User, email);
-      console.log("ESTE ES EL TOKEN 2 --------------", token);
       res.status(200).json(token);
     }
   } catch (error) {
@@ -176,11 +161,26 @@ const getAccessTokenGoogle = async (req, res) => {
   }
 };
 
+const verificationToken = async (req, res) => {
+  const { token } = req.body;
+  try {
+    if (!token) {
+      throw new Error("No se recibio Token");
+    }
+
+    const tokenValid = validToken(token);
+
+    res.status(200).json(tokenValid);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
 module.exports = {
   getAllUser,
   postSignUp,
-  postSignIn,
   postSendMail,
   getSingInGoogle,
   getAccessTokenGoogle,
+  verificationToken,
 };
