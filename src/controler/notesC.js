@@ -6,13 +6,14 @@ const getAllNotes = async (req, res) => {
     if (!email) {
       throw new Error("No se encontró el email");
     }
-    const allNotes = await User.findAll({
+    const allNotes = await User.findOne({
       where: { email },
-      include: { model: Notes },
+      include: {
+        model: Notes,
+      },
     });
-    console.log(allNotes);
 
-    res.status(200).json(allNotes);
+    res.status(200).json(allNotes.notes);
   } catch (error) {
     console.log(error);
     res.status(500).json({
@@ -25,7 +26,7 @@ const getAllNotes = async (req, res) => {
 const postNotes = async (req, res) => {
   const { name, description, importance } = req.body;
   const { idUser } = req.params;
-  console.log(idUser);
+
   try {
     const exitsUser = await User.findByPk(idUser);
 
@@ -52,7 +53,7 @@ const postNotes = async (req, res) => {
 
 const deleteNotes = async (req, res) => {
   const { idNote } = req.params;
-  console.log(idNote);
+
   try {
     const searchIdNote = await Notes.findOne({
       where: { id: idNote },
