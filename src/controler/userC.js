@@ -146,7 +146,7 @@ const getAccessTokenGoogle = async (req, res) => {
         await SignUp(User, userDataByTokenGoogle, workFactor);
 
         const token = await generateToken(User, email);
-        res.status(200).json(token);
+        return res.status(200).json(token);
       }
 
       const token = await generateToken(User, email);
