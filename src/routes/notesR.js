@@ -9,8 +9,8 @@ const {
 const router = Router();
 
 router.post("/", getAllNotes);
-router.post("/:idUser", postNotes);
-router.delete("/:idNote", deleteNotes);
-router.patch("/:idNote", editNote);
+router.post("/:userId", postNotes);
+router.delete("/:noteId", deleteNotes);
+router.patch("/:noteId", editNote);
 
 module.exports = router;
