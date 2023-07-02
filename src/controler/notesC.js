@@ -24,17 +24,17 @@ const getAllNotes = async (req, res) => {
 };
 
 const postNotes = async (req, res) => {
-  const { name, description, importance } = req.body;
-  const { idUser } = req.params;
+  const { title, description, importance } = req.body;
+  const { userId } = req.params;
 
   try {
-    const exitsUser = await User.findByPk(idUser);
+    const exitsUser = await User.findByPk(userId);
 
     if (!exitsUser) {
       throw new Error("No se encontró el usuario");
     }
     const newNote = await Notes.create({
-      name,
+      title,
       description,
       importance,
     });
@@ -52,11 +52,11 @@ const postNotes = async (req, res) => {
 };
 
 const deleteNotes = async (req, res) => {
-  const { idNote } = req.params;
+  const { noteId } = req.params;
 
   try {
     const searchIdNote = await Notes.findOne({
-      where: { id: idNote },
+      where: { id: noteId },
     });
 
     if (searchIdNote === null) {
@@ -64,7 +64,7 @@ const deleteNotes = async (req, res) => {
     }
 
     await Notes.destroy({
-      where: { id: idNote },
+      where: { id: noteId },
     });
 
     res.status(200).json({
@@ -81,12 +81,12 @@ const deleteNotes = async (req, res) => {
 };
 
 const editNote = async (req, res) => {
-  const { idNote } = req.params;
-  const { name, description, importance } = req.body;
+  const { noteId } = req.params;
+  const { title, description, importance } = req.body;
 
   try {
     const searchIdNote = await Notes.findOne({
-      where: { id: idNote },
+      where: { id: noteId },
     });
     if (searchIdNote === null) {
       throw new Error("La nota no existe en la base de datos");
@@ -103,12 +103,12 @@ const editNote = async (req, res) => {
     }
 
     await Notes.update(
-      { name, description, importance },
-      { where: { id: idNote } }
+      { title, description, importance },
+      { where: { id: noteId } }
     );
 
     const searchIdNoteUpdate = await Notes.findOne({
-      where: { id: idNote },
+      where: { id: noteId },
     });
 
     res.status(200).json({
