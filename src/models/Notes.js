@@ -12,7 +12,7 @@ module.exports = (sequelize) => {
       allowNull: false,
     },
     description: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
     },
     importance: {
       type: DataTypes.ENUM("high", "medium", "low"),
