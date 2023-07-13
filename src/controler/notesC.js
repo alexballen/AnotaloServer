@@ -24,7 +24,7 @@ const getAllNotes = async (req, res) => {
 };
 
 const postNotes = async (req, res) => {
-  const { title, description, importance } = req.body;
+  const { title, description, importance, reminder } = req.body;
   const { userId } = req.params;
 
   try {
@@ -37,6 +37,7 @@ const postNotes = async (req, res) => {
       title,
       description,
       importance,
+      reminder,
     });
 
     await exitsUser.addNotes(newNote);
@@ -82,7 +83,7 @@ const deleteNotes = async (req, res) => {
 
 const editNote = async (req, res) => {
   const { noteId } = req.params;
-  const { title, description, importance } = req.body;
+  const { title, description, importance, reminder } = req.body;
 
   try {
     const searchIdNote = await Notes.findOne({
@@ -103,7 +104,7 @@ const editNote = async (req, res) => {
     }
 
     await Notes.update(
-      { title, description, importance },
+      { title, description, importance, reminder },
       { where: { id: noteId } }
     );
 
