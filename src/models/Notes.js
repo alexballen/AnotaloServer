@@ -18,5 +18,8 @@ module.exports = (sequelize) => {
       type: DataTypes.ENUM("high", "medium", "low"),
       allowNull: false,
     },
+    reminder: {
+      type: DataTypes.DATE,
+    },
   });
 };
