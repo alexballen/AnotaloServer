@@ -3,36 +3,34 @@ const { Op } = require("sequelize");
 const cron = require("node-cron");
 
 const task = () => {
-  cron.schedule("* * * * *", () => {
-    console.log("Running a task every minute");
+  cron.schedule("* * * * *", async () => {
+    console.log("Se esta ejecutando el middleware");
+    try {
+      const currentDateTime = new Date();
+      const formattedDateTime = `${
+        currentDateTime.toISOString().split("T")[0]
+      } ${currentDateTime.getHours()}:${currentDateTime.getMinutes()}:${currentDateTime.getSeconds()}`;
+      console.log(currentDateTime);
+      console.log(formattedDateTime);
+
+      const notas = await Notes.findAll({
+        where: {
+          reminder: {
+            [Op.eq]: formattedDateTime,
+          },
+        },
+      });
+      console.log(notas);
+
+      /*    notas.forEach((nota) => {
+        console.log("Enviar notificación para la nota:", nota);
+      }); */
+    } catch (error) {
+      console.error("Error al realizar la consulta:", error);
+    }
   });
 };
 
-module.exports = task;
+task();
 
-/* // Define la tarea programada
-cron.schedule("* * * * *", async () => {
-  try {
-    // Obtén la fecha y hora actual
-    const currentDateTime = new Date();
-    console.log(currentDateTime);
-
-    // Realiza la consulta para obtener las notas cuya fecha y hora se haya cumplido
-    const notas = await Notes.findAll({
-      where: {
-        reminder: {
-          [Op.lte]: currentDateTime, // Obtén las notas cuya fecha sea menor o igual a la fecha y hora actual
-        },
-      },
-    });
-
-    // Procesa las notas encontradas
-    notas.forEach((nota) => {
-      // Envía la notificación al usuario o realiza la acción correspondiente
-      console.log("Enviar notificación para la nota:", nota);
-    });
-  } catch (error) {
-    console.error("Error al realizar la consulta:", error);
-  }
-});
- */
+module.exports = { task };
