@@ -26,6 +26,7 @@ const getAllNotes = async (req, res) => {
 const postNotes = async (req, res) => {
   const { title, description, importance, reminder } = req.body;
   const { userId } = req.params;
+  console.log(reminder);
 
   try {
     const exitsUser = await User.findByPk(userId);
@@ -84,6 +85,7 @@ const deleteNotes = async (req, res) => {
 const editNote = async (req, res) => {
   const { noteId } = req.params;
   const { title, description, importance, reminder } = req.body;
+  console.log(reminder);
 
   try {
     const searchIdNote = await Notes.findOne({
