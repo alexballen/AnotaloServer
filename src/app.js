@@ -7,10 +7,7 @@ const { task } = require("./services/reminders.js");
 
 const server = express();
 
-server.use((req, res, next) => {
-  next();
-  task();
-});
+task();
 
 server.set("view engine", "ejs");
 server.set("views", __dirname + "/views");
