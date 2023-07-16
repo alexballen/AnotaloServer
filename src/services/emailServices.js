@@ -9,6 +9,22 @@ const renderTemplate = async (
   templateType
 ) => {
   try {
+    if (!email) {
+      throw new Error("El campo email es obligatorio");
+    }
+    if (!subject) {
+      throw new Error("El campo subject es obligatorio");
+    }
+    if (!message) {
+      throw new Error("El campo message es obligatorio");
+    }
+    if (!greeting) {
+      throw new Error("El campo greeting es obligatorio");
+    }
+    if (!templateType) {
+      throw new Error("El campo templateType es obligatorio");
+    }
+
     const template = await ejs.renderFile(
       __dirname + `/../views/${templateType}`,
       {
@@ -21,31 +37,77 @@ const renderTemplate = async (
     return template;
   } catch (error) {
     console.log(error);
+    throw error;
   }
 };
 
 const createEmailTransporter = async () => {
   try {
+    const serviceEnv = process.env.SERVICES;
+    const hostEnv = process.env.HOST;
+    const portEnv = process.env.PORT_TRANSPORTER;
+    const secureEnv = process.env.SECURE;
+    const userEnv = process.env.AUTH_USER;
+    const passEnv = process.env.AUTH_PASS;
+
+    if (!serviceEnv) {
+      throw new Error("El campo SERVICES del archivo .env esta vacio");
+    }
+    if (!hostEnv) {
+      throw new Error("El campo HOST del archivo .env esta vacio");
+    }
+    if (!portEnv) {
+      throw new Error("El campo PORT_TRANSPORTER del archivo .env esta vacio");
+    }
+    if (!secureEnv) {
+      throw new Error("El campo SECURE del archivo .env esta vacio");
+    }
+    if (!userEnv) {
+      throw new Error("El campo AUTH_USER del archivo .env esta vacio");
+    }
+    if (!passEnv) {
+      throw new Error("El campo AUTH_PASS del archivo .env esta vacio");
+    }
+
     const transporter = await nodemailer.createTransport({
-      service: process.env.SERVICES,
-      host: process.env.HOST,
-      port: process.env.PORT_TRANSPORTER,
-      secure: process.env.SECURE,
+      service: serviceEnv,
+      host: hostEnv,
+      port: portEnv,
+      secure: secureEnv,
       auth: {
-        user: process.env.AUTH_USER,
-        pass: process.env.AUTH_PASS,
+        user: userEnv,
+        pass: passEnv,
       },
     });
     return transporter;
   } catch (error) {
     console.log(error);
+    throw error;
   }
 };
 
 const createMailOptions = async (email, subject, message, template) => {
   try {
+    const userEnv = process.env.AUTH_USER;
+
+    if (!email) {
+      throw new Error("El campo email es obligatorio");
+    }
+    if (!subject) {
+      throw new Error("El campo subject es obligatorio");
+    }
+    if (!message) {
+      throw new Error("El campo message es obligatorio");
+    }
+    if (!template) {
+      throw new Error("El campo template es obligatorio");
+    }
+    if (!userEnv) {
+      throw new Error("El campo AUTH_USER del archivo .env esta vacio");
+    }
+
     const mailOptions = {
-      from: process.env.AUTH_USER,
+      from: userEnv,
       to: email,
       subject,
       text: message,
@@ -54,6 +116,7 @@ const createMailOptions = async (email, subject, message, template) => {
     return mailOptions;
   } catch (error) {
     console.log(error);
+    throw error;
   }
 };
 
@@ -78,9 +141,24 @@ const emailSendProcess = async (
   subject,
   message,
   greeting,
-  templateType,
-  res
+  templateType
 ) => {
+  if (!email) {
+    throw new Error("El campo email es obligatorio");
+  }
+  if (!subject) {
+    throw new Error("El campo subject es obligatorio");
+  }
+  if (!message) {
+    throw new Error("El campo message es obligatorio");
+  }
+  if (!greeting) {
+    throw new Error("El campo greeting es obligatorio");
+  }
+  if (!templateType) {
+    throw new Error("El campo templateType es obligatorio");
+  }
+
   const template = await renderTemplate(
     email,
     subject,
@@ -100,20 +178,23 @@ const emailSendProcess = async (
 
   verifyTransporter(transporter)
     .then((success) => {
-      console.log("El servidor esta listo", success);
+      console.log("El servidor de correo esta listo", success);
       sendEmail(transporter, mailOptions)
         .then((success) => {
           console.log("Email enviado con exito", success);
-          res.status(200).json({ message: "Email enviado con exito" });
+          /* res.status(200).json({ message: "Email enviado con exito" }); */
         })
         .catch((error) => {
           console.log("No se puedo enviar el Email", error);
-          res.status(500).json({ message: "No se puedo enviar el Email" });
+          /* res.status(500).json({ message: "No se puedo enviar el Email" }); */
         });
     })
     .catch((error) => {
-      console.log("No hay conexión con el servidor", error);
-      res.status(500).json("No hay conexión con el servidor");
+      console.log(
+        "No hay conexión con el servidor de correo, verifica tus credenciales en tu archivo .env",
+        error
+      );
+      /*  res.status(500).json("No hay conexión con el servidor"); */
     });
 };
 
