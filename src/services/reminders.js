@@ -1,36 +1,47 @@
-const { Notes } = require("../db.js");
+const { Notes, User } = require("../db.js");
 const { Op } = require("sequelize");
+const { templateConstans } = require("../controler/constans.js");
+const { emailSendProcess } = require("./emailServices.js");
 const cron = require("node-cron");
+const dayjs = require("dayjs");
 
-const task = () => {
+const notesReminder = () => {
   cron.schedule("* * * * *", async () => {
-    console.log("Se esta ejecutando el middleware");
     try {
-      const currentDateTime = new Date();
-      const formattedDateTime = `${
-        currentDateTime.toISOString().split("T")[0]
-      } ${currentDateTime.getHours()}:${currentDateTime.getMinutes()}:${currentDateTime.getSeconds()}`;
-      console.log(currentDateTime);
-      console.log(formattedDateTime);
+      const currentDateTime = dayjs();
+      const formattedDateTime = currentDateTime.format("YYYY-MM-DD HH:mm:ss");
 
-      const notas = await Notes.findAll({
+      const searchNotes = await Notes.findAll({
         where: {
           reminder: {
             [Op.eq]: formattedDateTime,
           },
         },
+        include: {
+          model: User,
+        },
       });
-      console.log(notas);
 
-      /*    notas.forEach((nota) => {
-        console.log("Enviar notificación para la nota:", nota);
-      }); */
+      const subject = searchNotes[0]?.users[0]?.dataValues?.name;
+      const greeting = "Recordatorio Anotalo...";
+
+      searchNotes.forEach((note) => {
+        const email = note?.dataValues?.users[0]?.dataValues?.email;
+        const message = note?.dataValues?.title;
+
+        const emailReply = emailSendProcess(
+          email,
+          subject,
+          message,
+          greeting,
+          templateConstans.singIn
+        );
+        return emailReply;
+      });
     } catch (error) {
-      console.error("Error al realizar la consulta:", error);
+      console.error("Error while performing the query: ", error);
     }
   });
 };
 
-task();
-
-module.exports = { task };
+module.exports = { notesReminder };
