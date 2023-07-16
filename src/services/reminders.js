@@ -39,7 +39,7 @@ const notesReminder = () => {
         return emailReply;
       });
     } catch (error) {
-      console.error("Error while performing the query: ", error);
+      console.error("Error al realizar la consulta: ", error);
     }
   });
 };
