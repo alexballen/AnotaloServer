@@ -26,13 +26,17 @@ const getAllNotes = async (req, res) => {
 const postNotes = async (req, res) => {
   const { title, description, importance, reminder } = req.body;
   const { userId } = req.params;
-  console.log(reminder);
 
   try {
     const exitsUser = await User.findByPk(userId);
 
     if (!exitsUser) {
       throw new Error("No se encontró el usuario");
+    }
+    if (!title || !description) {
+      throw new Error(
+        "Se debe ingresar un titulo o una descripcion para crear la nota¡"
+      );
     }
     const newNote = await Notes.create({
       title,
@@ -85,7 +89,6 @@ const deleteNotes = async (req, res) => {
 const editNote = async (req, res) => {
   const { noteId } = req.params;
   const { title, description, importance, reminder } = req.body;
-  console.log(reminder);
 
   try {
     const searchIdNote = await Notes.findOne({
@@ -101,7 +104,7 @@ const editNote = async (req, res) => {
       importance !== "low"
     ) {
       throw new Error(
-        "La nota debe tener un esatdo de importancia high, medium o low"
+        "La nota debe tener un estado de importancia high, medium o low"
       );
     }
 
