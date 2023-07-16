@@ -143,59 +143,61 @@ const emailSendProcess = async (
   greeting,
   templateType
 ) => {
-  if (!email) {
-    throw new Error("El campo email es obligatorio");
-  }
-  if (!subject) {
-    throw new Error("El campo subject es obligatorio");
-  }
-  if (!message) {
-    throw new Error("El campo message es obligatorio");
-  }
-  if (!greeting) {
-    throw new Error("El campo greeting es obligatorio");
-  }
-  if (!templateType) {
-    throw new Error("El campo templateType es obligatorio");
-  }
+  try {
+    if (!email) {
+      throw new Error("El campo email es obligatorio");
+    }
+    if (!subject) {
+      throw new Error("El campo subject es obligatorio");
+    }
+    if (!message) {
+      throw new Error("El campo message es obligatorio");
+    }
+    if (!greeting) {
+      throw new Error("El campo greeting es obligatorio");
+    }
+    if (!templateType) {
+      throw new Error("El campo templateType es obligatorio");
+    }
 
-  const template = await renderTemplate(
-    email,
-    subject,
-    message,
-    greeting,
-    templateType
-  );
+    const template = await renderTemplate(
+      email,
+      subject,
+      message,
+      greeting,
+      templateType
+    );
 
-  const transporter = await createEmailTransporter();
+    const transporter = await createEmailTransporter();
 
-  const mailOptions = await createMailOptions(
-    email,
-    subject,
-    message,
-    template
-  );
+    const mailOptions = await createMailOptions(
+      email,
+      subject,
+      message,
+      template
+    );
 
-  verifyTransporter(transporter)
-    .then((success) => {
-      console.log("El servidor de correo esta listo", success);
-      sendEmail(transporter, mailOptions)
-        .then((success) => {
-          console.log("Email enviado con exito", success);
-          /* res.status(200).json({ message: "Email enviado con exito" }); */
-        })
-        .catch((error) => {
-          console.log("No se puedo enviar el Email", error);
-          /* res.status(500).json({ message: "No se puedo enviar el Email" }); */
-        });
-    })
-    .catch((error) => {
-      console.log(
-        "No hay conexión con el servidor de correo, verifica tus credenciales en tu archivo .env",
-        error
-      );
-      /*  res.status(500).json("No hay conexión con el servidor"); */
-    });
+    verifyTransporter(transporter)
+      .then((success) => {
+        console.log("El servidor de correo esta listo", success);
+        sendEmail(transporter, mailOptions)
+          .then((success) => {
+            console.log("Email enviado con exito", success);
+          })
+          .catch((error) => {
+            throw new Error("No se puedo enviar el Email", error);
+          });
+      })
+      .catch((error) => {
+        throw new Error(
+          "No hay conexión con el servidor de correo, verifica tus credenciales en tu archivo .env",
+          error
+        );
+      });
+  } catch (error) {
+    console.log(error);
+    throw error;
+  }
 };
 
 module.exports = {
