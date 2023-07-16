@@ -32,13 +32,13 @@ const postSignUp = async (req, res) => {
     const { name, email, password, image, isAdmin } = req.body;
 
     if (!name) {
-      throw new Error("El campo name es obligatorio");
+      throw new Error("El campo nombre es obligatorio");
     }
     if (!email) {
-      throw new Error("El campo email es obligatorio");
+      throw new Error("El campo correo es obligatorio");
     }
     if (!password) {
-      throw new Error("El campo password es obligatorio");
+      throw new Error("El campo contraseña es obligatorio");
     }
 
     const userDataByBody = {
@@ -66,17 +66,14 @@ const postSendMail = async (req, res) => {
         subject,
         message,
         greeting,
-        templateConstans.singIn,
-        res
+        templateConstans.singIn
       );
 
-      return result;
+      res.status(200).json("Email enviado con exito¡");
     }
   } catch (error) {
     console.log(error);
-    res
-      .status(500)
-      .json({ message: `${userConstans.error_in_function} postSendMail` });
+    res.status(500).json({ message: error.message });
   }
 };
 
