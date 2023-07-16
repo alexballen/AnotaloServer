@@ -3,11 +3,11 @@ const bodyParser = require("body-parser");
 const morgan = require("morgan");
 const cors = require("cors");
 const routes = require("./routes/index.js");
-const { task } = require("./services/reminders.js");
+const { notesReminder } = require("./services/reminders.js");
 
 const server = express();
 
-task();
+notesReminder();
 
 server.set("view engine", "ejs");
 server.set("views", __dirname + "/views");
