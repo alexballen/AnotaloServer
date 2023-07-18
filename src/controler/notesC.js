@@ -26,18 +26,18 @@ const getAllNotes = async (req, res) => {
 const postNotes = async (req, res) => {
   const { title, description, importance, reminder } = req.body;
   const { userId } = req.params;
-
   try {
     const exitsUser = await User.findByPk(userId);
 
     if (!exitsUser) {
       throw new Error("No se encontró el usuario");
     }
-    if (!title || !description) {
+    if (!title && !description) {
       throw new Error(
         "Se debe ingresar un titulo o una descripcion para crear la nota¡"
       );
     }
+
     const newNote = await Notes.create({
       title,
       description,
