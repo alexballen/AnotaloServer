@@ -179,9 +179,7 @@ const SignUp = async (userDb, userDataObject, workFactorParam) => {
     const emailSearch = await emailExists(userDb, email);
 
     if (emailSearch) {
-      throw new Error(
-        "No se puede registrar, por que el correo ya existe, ingrese un correo diferente o si ya esta registrado inicie sesion"
-      );
+      throw new Error("Ya existe el usuario¡");
     }
 
     const hashPassword = await generateHash(password, workFactorParam);
