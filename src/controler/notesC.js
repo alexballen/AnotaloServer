@@ -89,8 +89,6 @@ const deleteNotes = async (req, res) => {
 const editNote = async (req, res) => {
   const { noteId } = req.params;
   const { title, description, importance, reminder } = req.body;
-  console.log(reminder);
-
   try {
     const searchIdNote = await Notes.findOne({
       where: { id: noteId },
@@ -125,11 +123,8 @@ const editNote = async (req, res) => {
     }
 
     if (Object.keys(updateFields).length > 0) {
-      console.log("Si se modifico");
-      await Notes.update(
-        { title, description, importance, reminder },
-        { where: { id: noteId } }
-      );
+      updateFields.lastUpdated = new Date();
+      await Notes.update(updateFields, { where: { id: noteId } });
     }
 
     const searchIdNoteUpdate = await Notes.findOne({
