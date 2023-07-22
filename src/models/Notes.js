@@ -21,5 +21,9 @@ module.exports = (sequelize) => {
     reminder: {
       type: DataTypes.DATE,
     },
+    lastUpdated: {
+      type: DataTypes.DATE,
+      allowNull: false,
+    },
   });
 };
