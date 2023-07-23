@@ -24,7 +24,7 @@ const getAllNotes = async (req, res) => {
 };
 
 const postNotes = async (req, res) => {
-  const { title, description, importance, reminder } = req.body;
+  const { title, description, importance, reminder, lastUpdated } = req.body;
   const { userId } = req.params;
   try {
     const exitsUser = await User.findByPk(userId);
@@ -43,6 +43,7 @@ const postNotes = async (req, res) => {
       description,
       importance,
       reminder,
+      lastUpdated,
     });
 
     await exitsUser.addNotes(newNote);
