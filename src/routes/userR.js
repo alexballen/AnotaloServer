@@ -6,6 +6,8 @@ const {
   getSingInGoogle,
   getAccessTokenGoogle,
   verificationToken,
+  tokenConfirmation,
+  deleteUser,
 } = require("../controler/userC.js");
 
 const router = Router();
@@ -16,5 +18,7 @@ router.post("/signin", getAccessTokenGoogle);
 router.post("/signup", postSignUp);
 router.post("/email", postSendMail);
 router.post("/verification", verificationToken);
+router.patch("/accountconfirmation", tokenConfirmation);
+router.delete("/delete/:userId", deleteUser);
 
 module.exports = router;
