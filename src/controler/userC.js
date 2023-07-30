@@ -50,6 +50,25 @@ const postSignUp = async (req, res) => {
     };
 
     const registerUser = await SignUp(User, userDataByBody, workFactor);
+
+    if (registerUser.message === "Registro exitoso") {
+      const token = await generateToken(User, email);
+
+      const subject = `Usuario: ${name} Email: ${email}`;
+      const greeting = `Hola ${name} te damos la bienvenida a Anotalo, una app facil y practica para que guardes todos tus apuntes¡`;
+      const message = `Tu registro ha sido exitoso, da click en el siguiente link para confirmar tu correo electronico¡ ${`http://127.0.0.1:5173/accountconfirmation/?token=${token}`}`;
+
+      await emailSendProcess(
+        email,
+        subject,
+        message,
+        greeting,
+        templateConstans.singIn
+      );
+
+      /* res.status(200).json("Email enviado con exito¡"); */
+    }
+
     res.status(200).json(registerUser);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -61,7 +80,7 @@ const postSendMail = async (req, res) => {
     const { email, subject, message, greeting } = req.body;
 
     if (email && subject && message) {
-      const result = emailSendProcess(
+      await emailSendProcess(
         email,
         subject,
         message,
@@ -173,6 +192,58 @@ const verificationToken = async (req, res) => {
   }
 };
 
+const deleteUser = async (req, res) => {
+  const { userId } = req.params;
+
+  try {
+    const searchUserId = await User.findOne({
+      where: { id: userId },
+    });
+
+    if (searchUserId === null) {
+      throw new Error("El usuario no existe en la base de datos");
+    }
+
+    await User.destroy({
+      where: { id: userId },
+    });
+
+    res.status(200).json({
+      message: "Se eliminó el usuario exitosamente",
+      data: searchUserId,
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      message: "Ha ocurrido un error en deleteUser",
+      error: error.message,
+    });
+  }
+};
+
+const tokenConfirmation = async (req, res) => {
+  const token = req.query.token;
+
+  try {
+    const tokenValid = validToken(token);
+    const userId = tokenValid.id;
+
+    if (tokenValid) {
+      const searchUser = await User.findOne({
+        where: { id: userId },
+      });
+
+      if (searchUser) {
+        await User.update({ isValidated: true }, { where: { id: userId } });
+      }
+    }
+
+    res.status(200).json(tokenValid);
+  } catch (error) {
+    console.log(error);
+  }
+};
+
 module.exports = {
   getAllUser,
   postSignUp,
@@ -180,4 +251,6 @@ module.exports = {
   getSingInGoogle,
   getAccessTokenGoogle,
   verificationToken,
+  tokenConfirmation,
+  deleteUser,
 };
