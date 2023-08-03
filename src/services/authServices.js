@@ -160,7 +160,7 @@ const userDbCreate = async (userDb, userDataObject) => {
 };
 
 const SignUp = async (userDb, userDataObject, workFactorParam) => {
-  const { name, email, password, image, isAdmin } = userDataObject;
+  const { name, email, password, image, isAdmin, isValidated } = userDataObject;
 
   try {
     if (!userDb) {
@@ -196,6 +196,7 @@ const SignUp = async (userDb, userDataObject, workFactorParam) => {
       password: hashPassword,
       image,
       isAdmin,
+      isValidated,
     };
 
     const createUser = await userDbCreate(userDb, userDataObjectModifiedByHash);
@@ -465,4 +466,5 @@ module.exports = {
   emailExists,
   generateToken,
   validToken,
+  generateHash,
 };
