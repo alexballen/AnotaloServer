@@ -10,6 +10,7 @@ const {
   emailExists,
   generateToken,
   validToken,
+  generateHash,
 } = require("../services/authServices.js");
 
 const getAllUser = async (req, res) => {
@@ -65,8 +66,6 @@ const postSignUp = async (req, res) => {
         greeting,
         templateConstans.singIn
       );
-
-      /* res.status(200).json("Email enviado con exito¡"); */
     }
 
     res.status(200).json(registerUser);
@@ -157,6 +156,7 @@ const getAccessTokenGoogle = async (req, res) => {
           email,
           password,
           image: picture,
+          isValidated: true,
         };
 
         await SignUp(User, userDataByTokenGoogle, workFactor);
@@ -244,6 +244,69 @@ const tokenConfirmation = async (req, res) => {
   }
 };
 
+const resetPassword = async (req, res) => {
+  const { email } = req.body;
+  try {
+    if (!email) {
+      throw new Error("El campo email es obligatorio");
+    }
+
+    const emailSearch = await emailExists(User, email);
+    const name = emailSearch?.dataValues?.name;
+
+    if (!emailSearch) {
+      res.status(500).json("Correo no exite en la db");
+    }
+    if (emailSearch) {
+      const token = await generateToken(User, email);
+
+      const subject = `Usuario: ${name} Email: ${email}`;
+      const greeting = `Hola ${name} has realizado una solicitud de recuperacion de contraseña¡`;
+      const message = `Para restaurar la contraseña da click en este enlace y realiza el cambio, de lo contrario tu contraseña no se modificara¡ ${`http://127.0.0.1:5173/passwordresetconfirmation/?token=${token}`}`;
+
+      await emailSendProcess(
+        email,
+        subject,
+        message,
+        greeting,
+        templateConstans.singIn
+      );
+      res.status(200).json("Cambio de contraseña enviado");
+    }
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+const passwordResetConfirmation = async (req, res) => {
+  const workFactor = process.env.BCRYPT_WORK_FACTOR;
+  const { password, token } = req.body;
+
+  try {
+    const tokenValid = validToken(token);
+    const userId = tokenValid.id;
+
+    const hashPassword = await generateHash(password, workFactor);
+
+    if (tokenValid) {
+      const searchUser = await User.findOne({
+        where: { id: userId },
+      });
+
+      if (searchUser) {
+        await User.update(
+          { password: hashPassword },
+          { where: { id: userId } }
+        );
+      }
+    }
+
+    res.status(200).json(tokenValid);
+  } catch (error) {
+    console.log(error);
+  }
+};
+
 module.exports = {
   getAllUser,
   postSignUp,
@@ -251,6 +314,8 @@ module.exports = {
   getSingInGoogle,
   getAccessTokenGoogle,
   verificationToken,
+  resetPassword,
+  passwordResetConfirmation,
   tokenConfirmation,
   deleteUser,
 };
