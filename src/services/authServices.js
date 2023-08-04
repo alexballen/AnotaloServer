@@ -84,7 +84,7 @@ const validHash = async (password, passwordHash) => {
   }
 };
 
-const generateToken = async (userDb, email) => {
+const generateToken = async (userDb, email, tokenExpiration) => {
   try {
     if (!userDb) {
       throw new Error("El campo userDb es obligatorio en --> generateToken");
@@ -92,6 +92,8 @@ const generateToken = async (userDb, email) => {
     if (!email) {
       throw new Error("El campo email es obligatorio --> generateToken");
     }
+
+    const options = tokenExpiration ? { expiresIn: tokenExpiration } : {};
 
     const emailSearch = await emailExists(userDb, email);
 
@@ -102,7 +104,7 @@ const generateToken = async (userDb, email) => {
         name,
         email,
       };
-      const token = jwt.sign(user, process.env.SECRET_TOKEN);
+      const token = jwt.sign(user, process.env.SECRET_TOKEN, options);
       return token;
     }
 
@@ -125,10 +127,11 @@ const validToken = (token) => {
   } catch (error) {
     if (error.name === "TokenExpiredError") {
       console.log("El token ha expirado ", error);
+      return { expired: true, message: "El token ha expirado" };
     } else {
       console.log("Error al validar el token: ", error);
+      return { error: true, message: "Error al validar el token" };
     }
-    throw error;
   }
 };
 
