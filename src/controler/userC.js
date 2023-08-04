@@ -1,5 +1,5 @@
-const { User, Notes } = require("../db.js");
-const { userConstans, templateConstans } = require("./constans.js");
+const { User, Notes, Tokenemail } = require("../db.js");
+const { templateConstans } = require("./constans.js");
 const { emailSendProcess } = require("../services/emailServices.js");
 const {
   SignUp,
@@ -246,6 +246,7 @@ const tokenConfirmation = async (req, res) => {
 
 const resetPassword = async (req, res) => {
   const { email } = req.body;
+  console.log(email);
   try {
     if (!email) {
       throw new Error("El campo email es obligatorio");
@@ -253,16 +254,31 @@ const resetPassword = async (req, res) => {
 
     const emailSearch = await emailExists(User, email);
     const name = emailSearch?.dataValues?.name;
+    const userId = emailSearch?.dataValues?.id;
 
     if (!emailSearch) {
       res.status(500).json("Correo no exite en la db");
     }
+
     if (emailSearch) {
-      const token = await generateToken(User, email);
+      const token = await generateToken(User, email, "2h");
+
+      const searchToken = await Tokenemail.findOne({
+        where: { userId },
+      });
+
+      if (!searchToken) {
+        const dataToken = {
+          userId,
+          token,
+        };
+
+        await Tokenemail.create(dataToken);
+      }
 
       const subject = `Usuario: ${name} Email: ${email}`;
       const greeting = `Hola ${name} has realizado una solicitud de recuperacion de contraseña¡`;
-      const message = `Para restaurar la contraseña da click en este enlace y realiza el cambio, de lo contrario tu contraseña no se modificara¡ ${`http://127.0.0.1:5173/passwordresetconfirmation/?token=${token}`}`;
+      const message = `Para restaurar la contraseña da click en este enlace y realiza el cambio, de lo contrario tu contraseña no se modificara¡ ${`http://127.0.0.1:5173/passwordresetconfirmation/?t=${token}`}`;
 
       await emailSendProcess(
         email,
@@ -275,6 +291,7 @@ const resetPassword = async (req, res) => {
     }
   } catch (error) {
     console.log(error);
+    throw error;
   }
 };
 
@@ -288,20 +305,38 @@ const passwordResetConfirmation = async (req, res) => {
 
     const hashPassword = await generateHash(password, workFactor);
 
-    if (tokenValid) {
-      const searchUser = await User.findOne({
-        where: { id: userId },
-      });
+    if (!tokenValid.expired) {
+      if (userId) {
+        const searchUser = await User.findOne({
+          where: { id: userId },
+        });
 
-      if (searchUser) {
-        await User.update(
-          { password: hashPassword },
-          { where: { id: userId } }
-        );
+        const searchToken = await Tokenemail.findOne({
+          where: { userId },
+        });
+
+        if (searchUser && searchToken) {
+          await User.update(
+            { password: hashPassword },
+            { where: { id: userId } }
+          );
+
+          await Tokenemail.destroy({
+            where: { userId },
+          });
+
+          const passwordReset = { reset: true };
+          res.status(200).json(passwordReset);
+          return;
+        } else {
+          const usedToken = { used: true };
+          res.status(504).json(usedToken);
+          return;
+        }
       }
     }
 
-    res.status(200).json(tokenValid);
+    res.status(500).json(tokenValid);
   } catch (error) {
     console.log(error);
   }
