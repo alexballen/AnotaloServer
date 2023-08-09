@@ -46,8 +46,8 @@ sequelize.models = Object.fromEntries(capsEntries);
 
 const { Notes, User } = sequelize.models;
 
-Notes.belongsToMany(User, { through: "notes_user" });
-User.belongsToMany(Notes, { through: "notes_user" });
+Notes.belongsToMany(User, { through: "notes_user", onDelete: "CASCADE" });
+User.belongsToMany(Notes, { through: "notes_user", onDelete: "CASCADE" });
 
 module.exports = {
   ...sequelize.models, // para poder importar los modelos así: const { Product, User } = require('./db.js');
