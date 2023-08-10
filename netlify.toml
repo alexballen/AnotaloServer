@@ -1,7 +1,7 @@
 [build]
 command = "npm run build" # Si es necesario construir tu backend antes del despliegue
 functions = "src" # Cambia esta ruta según la ubicación de tu código de backend
-publish = "public" # Puede ser cualquier carpeta, ya que estás desplegando una API
+
 
 [[redirects]]
 from = "/*"
