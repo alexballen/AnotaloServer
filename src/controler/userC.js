@@ -53,7 +53,7 @@ const postSignUp = async (req, res) => {
     const registerUser = await SignUp(User, userDataByBody, workFactor);
 
     if (registerUser.message === "Registro exitoso") {
-      const token = await generateToken(User, email);
+      const token = await generateToken(User, email, "24h");
 
       const subject = `Usuario: ${name} Email: ${email}`;
       const greeting = `Hola ${name} te damos la bienvenida a Anotalo, una app facil y practica para que guardes todos tus apuntes¡`;
@@ -90,7 +90,6 @@ const postSendMail = async (req, res) => {
       res.status(200).json("Email enviado con exito¡");
     }
   } catch (error) {
-    console.log(error);
     res.status(500).json({ message: error.message });
   }
 };
@@ -118,7 +117,6 @@ const getAccessTokenGoogle = async (req, res) => {
   const characters = process.env.GENERATE_PASSWORD;
 
   const { code, email, password } = req.body;
-  console.log("Este es codigo de autorizacion de Google -------> ", code);
 
   try {
     if (!code) {
@@ -129,7 +127,22 @@ const getAccessTokenGoogle = async (req, res) => {
         throw new Error("El campo password es obligatorio");
       }
 
+      const verifyIsValidated = await User.findOne({
+        where: { email },
+      });
+
+      const validate = verifyIsValidated?.dataValues?.isValidated;
+
+      if (verifyIsValidated === null) {
+        throw new Error("Usuario no existe");
+      }
+
+      if (!validate) {
+        throw new Error("Validar correo");
+      }
+
       const userAuth = await SignIn(User, email, password);
+
       res.status(200).json(userAuth);
     }
 
@@ -196,12 +209,18 @@ const deleteUser = async (req, res) => {
   const { userId } = req.params;
 
   try {
-    const searchUserId = await User.findOne({
-      where: { id: userId },
-    });
+    const user = await User.findByPk(userId);
 
-    if (searchUserId === null) {
+    if (!user) {
       throw new Error("El usuario no existe en la base de datos");
+    }
+
+    // Encuentra todas las notas del usuario
+    const userNotes = await user.getNotes();
+
+    // Elimina cada nota individualmente
+    for (const note of userNotes) {
+      await note.destroy();
     }
 
     await User.destroy({
@@ -210,10 +229,9 @@ const deleteUser = async (req, res) => {
 
     res.status(200).json({
       message: "Se eliminó el usuario exitosamente",
-      data: searchUserId,
+      data: user,
     });
   } catch (error) {
-    console.log(error);
     res.status(500).json({
       message: "Ha ocurrido un error en deleteUser",
       error: error.message,
@@ -240,13 +258,15 @@ const tokenConfirmation = async (req, res) => {
 
     res.status(200).json(tokenValid);
   } catch (error) {
-    console.log(error);
+    res.status(500).json({
+      message: "Ha ocurrido un error en tokenConfirmation",
+      error: error.message,
+    });
   }
 };
 
 const resetPassword = async (req, res) => {
   const { email } = req.body;
-  console.log(email);
   try {
     if (!email) {
       throw new Error("El campo email es obligatorio");
@@ -257,7 +277,7 @@ const resetPassword = async (req, res) => {
     const userId = emailSearch?.dataValues?.id;
 
     if (!emailSearch) {
-      res.status(500).json("Correo no exite en la db");
+      res.status(500).json("Correo no exite");
     }
 
     if (emailSearch) {
@@ -267,6 +287,8 @@ const resetPassword = async (req, res) => {
         where: { userId },
       });
 
+      const tokenDb = searchToken?.dataValues?.token;
+
       if (!searchToken) {
         const dataToken = {
           userId,
@@ -275,6 +297,17 @@ const resetPassword = async (req, res) => {
 
         await Tokenemail.create(dataToken);
       }
+
+      const tokenValid = validToken(tokenDb);
+
+      if (!tokenValid.expired) {
+        res.status(200).json("Existe token vigente");
+        return;
+      }
+
+      await Tokenemail.destroy({
+        where: { userId },
+      });
 
       const subject = `Usuario: ${name} Email: ${email}`;
       const greeting = `Hola ${name} has realizado una solicitud de recuperacion de contraseña¡`;
