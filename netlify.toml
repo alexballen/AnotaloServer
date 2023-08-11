@@ -1,9 +1,0 @@
-[build]
-command = "npm run build" # Si es necesario construir tu backend antes del despliegue
-functions = "src" # Cambia esta ruta según la ubicación de tu código de backend
-
-
-[[redirects]]
-from = "/*"
-to = "/.netlify/functions/:splat"
-status = 200
