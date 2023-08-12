@@ -13,6 +13,8 @@ const {
   generateHash,
 } = require("../services/authServices.js");
 
+const baseURL = "https://anotalo.netlify.app";
+
 const getAllUser = async (req, res) => {
   try {
     const allUser = await User.findAll({
@@ -57,7 +59,7 @@ const postSignUp = async (req, res) => {
 
       const subject = `Usuario: ${name} Email: ${email}`;
       const greeting = `Hola ${name} te damos la bienvenida a Anotalo, una app facil y practica para que guardes todos tus apuntes¡`;
-      const message = `Tu registro ha sido exitoso, da click en el siguiente link para confirmar tu correo electronico¡ ${`http://127.0.0.1:5173/accountconfirmation/?token=${token}`}`;
+      const message = `Tu registro ha sido exitoso, da click en el siguiente link para confirmar tu correo electronico¡ ${`${baseURL}/accountconfirmation/?token=${token}`}`;
 
       await emailSendProcess(
         email,
@@ -311,7 +313,7 @@ const resetPassword = async (req, res) => {
 
       const subject = `Usuario: ${name} Email: ${email}`;
       const greeting = `Hola ${name} has realizado una solicitud de recuperacion de contraseña¡`;
-      const message = `Para restaurar la contraseña da click en este enlace y realiza el cambio, de lo contrario tu contraseña no se modificara¡ ${`http://127.0.0.1:5173/passwordresetconfirmation/?t=${token}`}`;
+      const message = `Para restaurar la contraseña da click en este enlace y realiza el cambio, de lo contrario tu contraseña no se modificara¡ ${`${baseURL}/passwordresetconfirmation/?t=${token}`}`;
 
       await emailSendProcess(
         email,
